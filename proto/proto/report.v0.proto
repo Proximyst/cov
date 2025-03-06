@@ -34,14 +34,22 @@ message Coverage {
   // path describes the location of the file or file-group that is covered.
   // It is potentially a relative path, and should be unique within the report.
   string path = 1;
+  // regions represent sections of lines in the file that are covered.
   repeated Region regions = 2;
 }
 
+// Region defines a contiguous section of lines in a file that are covered.
 message Region {
+  // start_line is the line number of the first line in the region. Inclusive.
   int64 start_line = 1;
+  // start_column is the column number of the first character in the region. Inclusive.
   int64 start_column = 2;
+  // end_line is the line number of the last line in the region. Inclusive.
   int64 end_line = 3;
+  // end_column is the column number of the last character in the region. Inclusive.
   int64 end_column = 4;
-  int32 execution_count = 5;
-  int32 statement_count = 6;
+  // execution_count is the number of times this region as a whole was executed, if the metric is available.
+  optional int32 execution_count = 5;
+  // statement_count is the number of statements in this region, if the metric is available.
+  optional int32 statement_count = 6;
 }

@@ -22,11 +22,12 @@ use tokio::{
 #[derive(Debug, clap::Args)]
 #[command(next_help_heading("Http"))]
 pub struct HttpArgs {
-    /// The socket address to bind the API to. This is an insecure HTTP server.
+    /// Where to bind the REST API's insecure HTTP server.
     #[arg(long, env, default_value = "0.0.0.0:8080")]
     api_addr: SocketAddr,
 
-    /// The socket address to bind the health API to. This is an insecure HTTP server.
+    /// Where to bind the health API's insecure HTTP server.
+    ///
     /// This is not intended to be public. If you wish to expose it anyhow, you must manually map this with a reverse proxy.
     #[arg(long, env, default_value = "0.0.0.0:8081")]
     health_addr: SocketAddr,

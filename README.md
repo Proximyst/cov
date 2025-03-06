@@ -46,6 +46,8 @@ The server and frontend are both intended to be behind a reverse proxy, such as 
 If you want to be safer with your data between the load-balancer and the individual servers, you can deploy pods with a sidecar that handles the TLS termination.
 The server does not support Unix sockets, only HTTP over TCP/IP.
 
+The database is PostgreSQL. The S3 object storage must support the XML API (which means practically all of them are fine).
+
 ## Development
 
 The backend is written in Rust, and the frontend is written in TypeScript.

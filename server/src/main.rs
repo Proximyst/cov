@@ -20,8 +20,11 @@ struct Args {
     #[arg(long, default_value = "warn,cov_server=info", env = "RUST_LOG")]
     logger: String,
 
-    #[command(flatten)]
+    #[command(flatten, next_help_heading = "HTTP servers")]
     http: http::HttpArgs,
+
+    #[command(flatten, next_help_heading = "Postgres")]
+    postgres: database::PostgresArgs,
 }
 
 #[tokio::main]
@@ -50,6 +53,11 @@ async fn main() -> Result<()> {
         health_rx,
     );
     info!("health http actor initialised");
+
+    database::spawn_database_actor(&mut join_set, args.postgres, component_health_tx.clone())
+        .await
+        .wrap_err("failed to start database actor")?;
+    info!("database actor initialised");
 
     http::spawn_rest_actor(&mut join_set, &args.http, component_health_tx.clone());
     info!("rest http actor initialised");
