@@ -1,14 +1,9 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+//! The protocol for cov.
+//!
+//! This is a RESTful API. The types are defined such that they can be presented as an OpenAPI3 schema.
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub mod auth;
+pub mod error;
+pub mod health;
+pub mod ping;
+pub mod version;

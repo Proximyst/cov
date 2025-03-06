@@ -58,16 +58,3 @@ jobs:
         run: rustup default stable
       - name: Check clippy
         run: cargo clippy --all-targets --all-features
-
-  buf:
-    runs-on: ubuntu-latest
-    name: Buf
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Check formatting
-        uses: bufbuild/buf-action@v1
-        with:
-          format: true
-          lint: true
-          breaking: false # we don't publish to BSR
