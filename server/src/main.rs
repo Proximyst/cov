@@ -4,7 +4,7 @@ mod http;
 mod report;
 
 use clap::Parser;
-use eyre::{Context, Result, eyre};
+use eyre::{Context, Result, bail, eyre};
 use metrics::{counter, gauge};
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 use std::{str::FromStr, time::Duration};
@@ -54,13 +54,27 @@ async fn main() -> Result<()> {
     );
     info!("health http actor initialised");
 
-    database::spawn_database_actor(&mut join_set, args.postgres, component_health_tx.clone())
-        .await
-        .wrap_err("failed to start database actor")?;
+    let db =
+        database::spawn_database_actor(&mut join_set, args.postgres, component_health_tx.clone())
+            .await
+            .wrap_err("failed to start database actor")?;
     info!("database actor initialised");
 
     http::spawn_rest_actor(&mut join_set, &args.http, component_health_tx.clone());
     info!("rest http actor initialised");
+
+    if let Err(e) = db
+        .create_organisation(
+            database::Priority::High,
+            database::model::Service::GitHub,
+            "grafana",
+        )
+        .await
+    {
+        if !matches!(e, database::create_org::Error::AlreadyExists) {
+            bail!(e);
+        }
+    }
 
     let _ = join_set.join_next().await;
     info!("a task in the join set completed; shutting down");

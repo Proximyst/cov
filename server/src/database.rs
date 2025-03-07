@@ -1,7 +1,12 @@
-use deadpool_postgres::{Client, Pool, PoolError};
+pub mod create_org;
+pub mod model;
+
+use crate::health::Component;
+use deadpool_postgres::{Client, Manager, Pool, PoolError};
 use eyre::{Context, Result};
 use futures::{FutureExt, future::OptionFuture};
 use metrics::counter;
+use model::Service;
 use native_tls::{Certificate, TlsConnector};
 use proto::health;
 use std::{
@@ -11,14 +16,12 @@ use std::{
     time::Duration,
 };
 use tokio::{
-    sync::mpsc,
+    sync::{mpsc, oneshot},
     task::JoinSet,
-    time::{Interval, interval},
+    time::interval,
 };
 use tokio_postgres::NoTls;
-use tracing::{debug, info, warn};
-
-use crate::health::Component;
+use tracing::{debug, error, info, warn};
 
 refinery::embed_migrations!("./src/migrations");
 
@@ -94,8 +97,9 @@ async fn create_pool(
     let mut cfg = tokio_postgres::Config::from_str(conn_string)
         .wrap_err("failed to parse connection string")?;
 
-    let manager_config = deadpool_postgres::ManagerConfig {
-        recycling_method: deadpool_postgres::RecyclingMethod::Fast,
+    use deadpool_postgres::{Manager, ManagerConfig, RecyclingMethod::Fast};
+    let manager_config = ManagerConfig {
+        recycling_method: Fast,
     };
     let manager = match ca_cert {
         Some(path) => {
@@ -112,11 +116,11 @@ async fn create_pool(
                 .build()
                 .wrap_err("failed to build TLS connector")?;
             let tls = postgres_native_tls::MakeTlsConnector::new(connector);
-            deadpool_postgres::Manager::from_config(cfg, tls, manager_config)
+            Manager::from_config(cfg, tls, manager_config)
         }
-        None => deadpool_postgres::Manager::from_config(cfg, NoTls, manager_config),
+        None => Manager::from_config(cfg, NoTls, manager_config),
     };
-    let pool = deadpool_postgres::Pool::builder(manager)
+    let pool = Pool::builder(manager)
         .max_size(pool_sz)
         .build()
         .wrap_err("failed to build deadpool")?;
@@ -139,10 +143,15 @@ async fn create_pool(
 }
 
 #[derive(Debug)]
-pub enum Command {}
+pub enum Command {
+    CreateOrganisation(
+        create_org::CreateOrganisation,
+        oneshot::Sender<Result<(), create_org::Error>>,
+    ),
+}
 
 async fn command_actor(
-    pool: Pool,
+    pools: Pools,
     mut high_priority_commands: mpsc::Receiver<Command>,
     mut low_priority_commands: mpsc::Receiver<Command>,
 ) {
@@ -154,35 +163,29 @@ async fn command_actor(
         cmd = high_priority_commands.recv() => cmd,
         cmd = low_priority_commands.recv() => cmd,
     } {
-        let conn = loop {
-            match pool.get().await {
-                Ok(conn) => break conn,
-                Err(PoolError::Closed) => {
-                    info!("database pool closed; shutting down database actor");
-                    return;
+        let pools = pools.clone();
+        tokio::spawn(async move {
+            match process(pools, command).await {
+                Ok(()) => {
+                    counter!("database_commands_processed", "outcome" => "success").increment(1);
                 }
                 Err(err) => {
-                    counter!("database_connection_failures").increment(1);
-                    tracing::warn!(error = ?err, "failed to get database connection. trying again");
-                    tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+                    counter!("database_commands_processed", "outcome" => "failure").increment(1);
+                    error!(?err, "failed to process command");
                 }
             }
-        };
-        match process(conn, command).await {
-            Ok(()) => {
-                counter!("database_commands_processed", "outcome" => "success").increment(1);
-            }
-            Err(err) => {
-                counter!("database_commands_processed", "outcome" => "failure").increment(1);
-            }
-        }
+        });
     }
 
     info!("database channels closed; shutting down database actor");
 }
 
-async fn process(conn: Client, command: Command) -> Result<()> {
-    match command {}
+async fn process(pools: Pools, command: Command) -> Result<()> {
+    match command {
+        Command::CreateOrganisation(cmd, reply) => {
+            create_org::create_organisation(pools, cmd, reply).await;
+        }
+    }
 
     Ok(())
 }
@@ -275,13 +278,65 @@ async fn health_check_actor(pools: Pools, health_tx: mpsc::Sender<(Component, he
     }
 }
 
+/// The priority of a command determines how urgently it should be processed.
+/// If a high-priority command exists in the queue, it is always processed before a low-priority one.
+/// That means that a low-priority command can be delayed indefinitely if there are always high-priority commands.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Priority {
+    /// A high-priority command, usually from a direct user action.
+    High,
+    /// A low-priority command, usually from a background task or worker thread.
+    Low,
+}
+
+#[derive(Debug, Clone)]
+pub struct Database {
+    high_prio: mpsc::Sender<Command>,
+    low_prio: mpsc::Sender<Command>,
+}
+
+impl Database {
+    pub async fn create_organisation(
+        &self,
+        priority: Priority,
+        svc: Service,
+        name: &str,
+    ) -> Result<(), create_org::Error> {
+        let (tx, rx) = oneshot::channel();
+        // The receiver cannot be closed, as we still own it.
+        let _ = self
+            .queue(priority)
+            .send(Command::CreateOrganisation(
+                create_org::CreateOrganisation::new(name, svc),
+                tx,
+            ))
+            .await;
+        rx.await.map_err(|_| create_org::Error::ReplyClosed)?
+    }
+
+    fn queue(&self, prio: Priority) -> &mpsc::Sender<Command> {
+        match prio {
+            Priority::High => &self.high_prio,
+            Priority::Low => &self.low_prio,
+        }
+    }
+}
+
 pub async fn spawn_database_actor(
     set: &mut JoinSet<()>,
     args: PostgresArgs,
     health_tx: mpsc::Sender<(Component, health::State)>,
-) -> Result<()> {
+) -> Result<Database> {
     let pools = create_pools(&args).await?;
     set.spawn(health_check_actor(pools.clone(), health_tx));
 
-    Ok(())
+    let (htx, hrx) = mpsc::channel(4);
+    let (ltx, lrx) = mpsc::channel(1);
+    let db = Database {
+        high_prio: htx,
+        low_prio: ltx,
+    };
+    set.spawn(command_actor(pools, hrx, lrx));
+
+    Ok(db)
 }
