@@ -1,3 +1,6 @@
 /target
 /run
 .DS_Store
+
+# temporary file for testing
+input.cov

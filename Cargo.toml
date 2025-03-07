@@ -12,10 +12,6 @@ description = "Code coverage tracking and UI."
 publish = false
 
 [workspace.dependencies]
-prost = "0.13"
-prost-types = "0.13"
-tonic = "^0.12"
-tonic-build = "^0.12"
 serde = { version = "1", features = ["derive"] }
 schemars = { version = "0.8", features = ["uuid1", "chrono"] }
 chrono = { version = "0.4", features = ["serde"] }

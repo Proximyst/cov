@@ -1,8 +1,9 @@
 pub mod create_org;
+pub mod create_repo;
 pub mod model;
 
 use crate::health::Component;
-use deadpool_postgres::{Client, Manager, Pool, PoolError};
+use deadpool_postgres::{Client, Pool, PoolError};
 use eyre::{Context, Result};
 use futures::{FutureExt, future::OptionFuture};
 use metrics::counter;
@@ -148,6 +149,10 @@ pub enum Command {
         create_org::CreateOrganisation,
         oneshot::Sender<Result<(), create_org::Error>>,
     ),
+    CreateRepository(
+        create_repo::CreateRepository,
+        oneshot::Sender<Result<(), create_repo::Error>>,
+    ),
 }
 
 async fn command_actor(
@@ -184,6 +189,9 @@ async fn process(pools: Pools, command: Command) -> Result<()> {
     match command {
         Command::CreateOrganisation(cmd, reply) => {
             create_org::create_organisation(pools, cmd, reply).await;
+        }
+        Command::CreateRepository(cmd, reply) => {
+            create_repo::create_repository(pools, cmd, reply).await;
         }
     }
 
@@ -312,6 +320,25 @@ impl Database {
             ))
             .await;
         rx.await.map_err(|_| create_org::Error::ReplyClosed)?
+    }
+
+    pub async fn create_repository(
+        &self,
+        priority: Priority,
+        svc: Service,
+        org_name: &str,
+        name: &str,
+    ) -> Result<(), create_repo::Error> {
+        let (tx, rx) = oneshot::channel();
+        // The receiver cannot be closed, as we still own it.
+        let _ = self
+            .queue(priority)
+            .send(Command::CreateRepository(
+                create_repo::CreateRepository::new(svc, org_name, name),
+                tx,
+            ))
+            .await;
+        rx.await.map_err(|_| create_repo::Error::ReplyClosed)?
     }
 
     fn queue(&self, prio: Priority) -> &mpsc::Sender<Command> {

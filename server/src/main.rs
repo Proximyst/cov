@@ -76,6 +76,29 @@ async fn main() -> Result<()> {
         }
     }
 
+    if let Err(e) = db
+        .create_repository(
+            database::Priority::High,
+            database::model::Service::GitHub,
+            "grafana",
+            "grafana",
+        )
+        .await
+    {
+        if !matches!(e, database::create_repo::Error::AlreadyExists) {
+            bail!(e);
+        }
+    }
+
+    let file = tokio::fs::File::open("input.cov")
+        .await
+        .wrap_err("failed to open input.cov")?;
+    let file = tokio::io::BufReader::new(file);
+    let parsing = report::parse_go_report(file)
+        .await
+        .wrap_err("failed to parse cov file")?;
+    info!(?parsing, "parsed report");
+
     let _ = join_set.join_next().await;
     info!("a task in the join set completed; shutting down");
     Ok(())
