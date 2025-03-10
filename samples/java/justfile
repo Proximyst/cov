@@ -1,0 +1,3 @@
+# Run the sample tests. Requires Java 21 or newer.
+test:
+    ./mvnw test

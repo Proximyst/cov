@@ -2,5 +2,5 @@
 /run
 .DS_Store
 
-# temporary file for testing
-input.cov
+samples/golang/*.cov
+samples/java/target/
