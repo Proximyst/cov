@@ -10,6 +10,7 @@ use axum::{
     body::Bytes,
     extract::State,
     http::{StatusCode, header},
+    middleware,
     response::IntoResponse,
     routing::get,
 };
@@ -35,13 +36,13 @@ pub(super) async fn rest_api_actor(addr: SocketAddr, health: Sender<(Component, 
     let api_router = ApiRouter::new()
         .api_route("/ping", get_with(ping::serve_ping, ping::transform_ping))
         .fallback(super::serve_404)
-        .layer(axum::middleware::from_fn(super::require_accept_json));
+        .layer(middleware::from_fn(super::require_accept_json));
 
     let router = ApiRouter::new()
         .route("/scalar", Scalar::new("/api.json").axum_route())
         .route(
             "/api.json",
-            get(serve_openapi).layer(axum::middleware::from_fn(super::require_accept_json)),
+            get(serve_openapi).layer(middleware::from_fn(super::require_accept_json)),
         )
         .nest_api_service("/v0", api_router);
     let router = router.finish_api_with(&mut api, |t| {

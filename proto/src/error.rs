@@ -24,6 +24,12 @@ pub enum ErrorCode {
     /// Values like `application/*` and `*/*` are also accepted. Omitting the header entirely is also accepted.
     NotAcceptable,
 
+    /// The request was invalid because of another resource. The message can contain more information.
+    Precondition,
+
+    /// The resource provided already exists.
+    AlreadyExists,
+
     /// The client does not know about the error code.
     /// This is never returned by the server.
     #[serde(other)]

@@ -4,7 +4,7 @@ mod http;
 mod report;
 
 use clap::Parser;
-use eyre::{Context, Result, bail, eyre};
+use eyre::{Context, Result, eyre};
 use metrics::{counter, gauge};
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 use std::{str::FromStr, time::Duration};
@@ -54,7 +54,7 @@ async fn main() -> Result<()> {
     );
     info!("health http actor initialised");
 
-    let db =
+    let _db =
         database::spawn_database_actor(&mut join_set, args.postgres, component_health_tx.clone())
             .await
             .wrap_err("failed to start database actor")?;
@@ -62,42 +62,6 @@ async fn main() -> Result<()> {
 
     http::spawn_rest_actor(&mut join_set, &args.http, component_health_tx.clone());
     info!("rest http actor initialised");
-
-    if let Err(e) = db
-        .create_organisation(
-            database::Priority::High,
-            database::model::Service::GitHub,
-            "grafana",
-        )
-        .await
-    {
-        if !matches!(e, database::create_org::Error::AlreadyExists) {
-            bail!(e);
-        }
-    }
-
-    if let Err(e) = db
-        .create_repository(
-            database::Priority::High,
-            database::model::Service::GitHub,
-            "grafana",
-            "grafana",
-        )
-        .await
-    {
-        if !matches!(e, database::create_repo::Error::AlreadyExists) {
-            bail!(e);
-        }
-    }
-
-    let file = tokio::fs::File::open("input.cov")
-        .await
-        .wrap_err("failed to open input.cov")?;
-    let file = tokio::io::BufReader::new(file);
-    let parsing = report::parse_go_report(file)
-        .await
-        .wrap_err("failed to parse cov file")?;
-    info!(?parsing, "parsed report");
 
     let _ = join_set.join_next().await;
     info!("a task in the join set completed; shutting down");

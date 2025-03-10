@@ -3,12 +3,14 @@ use aide::{
     axum::{ApiRouter, IntoApiResponse, routing::get_with},
     openapi::OpenApi,
     scalar::Scalar,
+    transform::TransformOperation,
 };
 use axum::{
     Json,
     body::Bytes,
     extract::State,
     http::{StatusCode, header},
+    middleware,
     response::IntoResponse,
     routing::get,
 };
@@ -37,6 +39,28 @@ async fn serve_health(
     (status, Json(health))
 }
 
+fn transform_health(t: TransformOperation) -> TransformOperation {
+    let healthy = Component::all_with(Utc::now(), health::State::Healthy);
+    let mut unhealthy = Component::all_unknown(Utc::now());
+    unhealthy
+        .components
+        .insert(Component::Database.name().into(), health::State::Healthy);
+    unhealthy.components.insert(
+        Component::HealthApiActor.name().into(),
+        health::State::Unhealthy(String::from("example text")),
+    );
+
+    t.description(
+        "Fetches the current health of the system. This does not force a re-check of health.",
+    )
+    .response_with::<200, Json<health::Health>, _>(|r| {
+        r.description("The system is healthy.").example(healthy)
+    })
+    .response_with::<500, Json<health::Health>, _>(|r| {
+        r.description("The system is unhealthy.").example(unhealthy)
+    })
+}
+
 #[derive(Clone)]
 struct OpenApiJson(Bytes);
 
@@ -57,31 +81,15 @@ pub(super) async fn health_api_actor(
 
     let router = ApiRouter::new()
         .route("/scalar", Scalar::new("/api.json").axum_route())
-        .route("/api.json",
-            get(serve_openapi).layer(axum::middleware::from_fn(super::require_accept_json)),
+        .route(
+            "/api.json",
+            get(serve_openapi).layer(middleware::from_fn(super::require_accept_json)),
         )
         .api_route(
             "/health",
-            get_with(serve_health, |t| {
-                t.description("Fetches the current health of the system. This does not force a re-check of health.")
-                    .response_with::<200, Json<health::Health>, _>(|r| {
-                        r.description("The system is healthy.")
-                            .example(Component::all_with(Utc::now(), health::State::Healthy))
-                    })
-                    .response_with::<500, Json<health::Health>, _>(|r| {
-                        let mut example = Component::all_unknown(Utc::now());
-                        example
-                            .components
-                            .insert(Component::Database.name().into(), health::State::Healthy);
-                        example.components.insert(
-                            Component::HealthApiActor.name().into(),
-                            health::State::Unhealthy(String::from("example text")),
-                        );
-                        r.description("The system is unhealthy.").example(example)
-                    })
-            })
-            .with_state(current)
-            .layer(axum::middleware::from_fn(super::require_accept_json)),
+            get_with(serve_health, transform_health)
+                .with_state(current)
+                .layer(middleware::from_fn(super::require_accept_json)),
         );
     let router = router.finish_api_with(&mut api, |t| {
         t.title("cov - Health API")
@@ -107,10 +115,12 @@ pub(super) async fn health_api_actor(
             return;
         }
     };
+    trace!(?addr, "bound TcpListener");
 
     let _ = health
         .send((Component::HealthApiActor, health::State::Healthy))
         .await;
+    trace!("sent Healthy for HealthApiActor");
 
     if let Err(err) = axum::serve(listener, router).await {
         error!(?addr, ?err, "failed to serve axum");
