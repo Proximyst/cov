@@ -27,3 +27,8 @@ test-cov:
     cargo llvm-cov report --lcov --doctests --output-path target/llvm-cov/lcov.info
     cargo llvm-cov report --json --doctests --output-path target/llvm-cov/cov.json
     cargo llvm-cov report --html --doctests
+
+# Run and collect samples. Assumes Go and Java 21 (or later) are installed.
+samples:
+    cd samples/golang && just
+    cd samples/java && just
