@@ -10,7 +10,11 @@ public class Sample {
     System.out.println("This method is called exactly once.");
   }
 
-  public void calledManyTimes(String name) {
+  // Weird formatting for the `method`'s `line` field.
+  public void
+  calledManyTimes(String name) {
+    // Non-executable code.
+
     var greeting = "Hello, %s!".formatted(name);
     System.out.println("I have gotten a greeting to share. I'll print it on stderr.");
     System.err.println(greeting);
