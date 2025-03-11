@@ -36,6 +36,7 @@ uuid = { workspace = true, features = ["fast-rng"] }
 thiserror = "2.0.12"
 bytes = "1.10.1"
 winnow = "0.7.3"
+quick-xml = { version = "0.37.2", features = ["serde", "serialize"] }
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
