@@ -4,3 +4,9 @@
 
 samples/golang/*.cov
 samples/java/target/
+samples/c/.cache/
+samples/c/build/
+samples/cpp/.cache/
+samples/cpp/build/
+samples/jest/node_modules/
+samples/jest/coverage/

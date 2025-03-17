@@ -1,8 +1,7 @@
-# Format all files in the repository. Assumes cargo, taplo, and buf are installed.
+# Format all files in the repository. Assumes cargo is installed. Taplo is optional but recommended.
 fmt:
-    taplo fmt
+    taplo --version &>/dev/null && taplo fmt || true
     cargo fmt
-    buf format --write
 
 # Build the entire project. Assumes cargo is installed.
 build:
@@ -10,7 +9,7 @@ build:
 
 # Run all tests. Assumes cargo is installed. cargo-nextest is optional but recommended for faster test suites.
 test:
-    if cargo nextest --version >/dev/null 2>/dev/null; then just _fast_test; else just _legacy_test; fi
+    if cargo nextest --version &>/dev/null; then just _fast_test; else just _legacy_test; fi
 
 _fast_test:
     cargo nextest run
@@ -28,7 +27,31 @@ test-cov:
     cargo llvm-cov report --json --doctests --output-path target/llvm-cov/cov.json
     cargo llvm-cov report --html --doctests
 
-# Run and collect samples. Assumes Go and Java 21 (or later) are installed.
+# Run and collect samples. Read individual justfiles for assumptions.
 samples:
+    if stdbuf --version &>/dev/null; then just _parallel_samples; else just _sequential_samples; fi
+
+_samples-golang:
     cd samples/golang && just
+_samples-java:
     cd samples/java && just
+_samples-c:
+    cd samples/c && just
+_samples-cpp:
+    cd samples/cpp && just
+_samples-jest:
+    cd samples/jest && just
+
+_parallel_samples:
+    #!/bin/bash
+    set -eu
+    (stdbuf -oL just _samples-golang | sed "s/^/$(printf '\033[31mgolang:\033[0m') /") &
+    (stdbuf -oL just _samples-java   | sed "s/^/$(printf '\033[32mjava  :\033[0m') /") &
+    (stdbuf -oL just _samples-c      | sed "s/^/$(printf '\033[33mc     :\033[0m') /") &
+    (stdbuf -oL just _samples-cpp    | sed "s/^/$(printf '\033[34mcpp   :\033[0m') /") &
+    (stdbuf -oL just _samples-jest   | sed "s/^/$(printf '\033[35mjest  :\033[0m') /") &
+    trap 'kill $(jobs -pr)' SIGINT
+    wait
+
+# Runs samples sequentially. Useful for when you need to find out which sample failed, or want it to go slow.
+samples-sequential: && _samples-golang _samples-java _samples-c _samples-cpp _samples-jest

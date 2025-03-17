@@ -1,0 +1,7 @@
+# Run the sample tests. Requires npm to be installed.
+test: _assert_installed
+    npm test
+
+# Ensure all required tools are installed.
+_assert_installed:
+    command -v npm &>/dev/null
