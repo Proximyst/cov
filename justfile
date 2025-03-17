@@ -1,7 +1,7 @@
 # Format all files in the repository. Assumes cargo is installed. Taplo is optional but recommended.
 fmt:
     taplo --version &>/dev/null && taplo fmt || true
-    cargo fmt
+    cargo +nightly fmt
 
 # Build the entire project. Assumes cargo is installed.
 build:
