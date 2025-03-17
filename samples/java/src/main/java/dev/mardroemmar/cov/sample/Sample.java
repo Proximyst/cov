@@ -20,4 +20,10 @@ public class Sample {
     System.err.println(greeting);
     System.out.println("Did you get that?");
   }
+
+  // Weird formatting for the `method`'s `line` field.
+  public void looped(String name) {
+    var greeting = "Hello, %s!".formatted(name);
+    System.err.println(greeting);
+  }
 }

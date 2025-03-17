@@ -30,4 +30,12 @@ class SampleTest {
     sample.calledManyTimes("Alice");
     sample.calledManyTimes("Bob");
   }
+
+  @Test
+  void testLooped() {
+    Sample sample = new Sample();
+    for (int i = 0; i < 500; ++i) {
+      sample.looped("Alice");
+    }
+  }
 }
