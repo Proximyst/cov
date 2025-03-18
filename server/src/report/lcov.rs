@@ -153,6 +153,11 @@ fn parse_report(s: &mut &str) -> ModalResult<Report> {
 
     let mut tests = Vec::new();
 
+    #[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+    enum FnKey<'a> {
+        Modern(u32),
+        Legacy(&'a str),
+    }
     let mut test = Test::default();
     let mut functions = BTreeMap::new();
 
@@ -216,7 +221,7 @@ fn parse_report(s: &mut &str) -> ModalResult<Report> {
             }
             InputLine::ModernFunctionLeader(leader) => {
                 functions.insert(
-                    leader.index,
+                    FnKey::Modern(leader.index),
                     Function {
                         name: String::new(),
                         line_number_start: leader.line_number,
@@ -227,7 +232,7 @@ fn parse_report(s: &mut &str) -> ModalResult<Report> {
                 );
             }
             InputLine::ModernFunctionAlias(alias) => {
-                let Some(f) = functions.get_mut(&alias.index) else {
+                let Some(f) = functions.get_mut(&FnKey::Modern(alias.index)) else {
                     fail.ctx("function alias without leader").parse_next(s)?
                 };
 
@@ -237,8 +242,26 @@ fn parse_report(s: &mut &str) -> ModalResult<Report> {
                 f.execution_count += alias.execution_count;
                 f.aliases.push((alias.name.into(), alias.execution_count));
             }
-            InputLine::LegacyFunctionLeader(_) => todo!(),
-            InputLine::LegacyFunctionData(_) => todo!(),
+            InputLine::LegacyFunctionLeader(leader) => {
+                functions.insert(
+                    FnKey::Legacy(leader.name),
+                    Function {
+                        name: leader.name.into(),
+                        line_number_start: leader.line_number,
+                        line_number_end: leader.line_number_end,
+                        execution_count: 0,
+                        aliases: Vec::new(),
+                    },
+                );
+            }
+            InputLine::LegacyFunctionData(data) => {
+                let Some(f) = functions.get_mut(&FnKey::Legacy(data.name)) else {
+                    fail.ctx("function data without leader").parse_next(s)?
+                };
+
+                f.execution_count += data.execution_count;
+                f.aliases.push((f.name.clone(), data.execution_count));
+            }
             InputLine::EndOfRecord => {
                 for (_, f) in &functions {
                     if f.name.is_empty() {
