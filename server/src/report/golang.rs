@@ -1,9 +1,9 @@
-use super::InvalidReport;
-use std::str::FromStr;
+use super::ParserExt;
 use winnow::{
-    Parser, Result,
+    ModalResult, Parser, Result,
     ascii::{dec_uint, line_ending, newline},
     combinator::{alt, opt, separated, terminated},
+    error::{ContextError, ParseError},
     token::{literal, take_until},
 };
 
@@ -16,21 +16,16 @@ pub struct Report {
     pub regions: Vec<LineRegion>,
 }
 
-impl FromStr for Report {
-    type Err = InvalidReport;
-
-    fn from_str(mut s: &str) -> Result<Self, Self::Err> {
-        let s = &mut s;
-        let mode = parse_mode(s).map_err(|_| InvalidReport)?;
-        let regions = separated(0.., parse_region, line_ending)
-            .parse_next(s)
-            .map_err(|_| InvalidReport)?;
-        if s.is_empty() {
-            Ok(Report { mode, regions })
-        } else {
-            Err(InvalidReport)
-        }
+impl Report {
+    pub fn from_str(s: &str) -> Result<Self, ParseError<&str, ContextError>> {
+        parse_report.parse(s.trim())
     }
+}
+
+fn parse_report(s: &mut &str) -> ModalResult<Report> {
+    let mode = parse_mode.ctx("mode line").parse_next(s)?;
+    let regions = separated(0.., parse_region.ctx("region line"), line_ending).parse_next(s)?;
+    Ok(Report { mode, regions })
 }
 
 /// The mode of the counting in the Go report.
@@ -46,12 +41,12 @@ pub enum Mode {
     Atomic,
 }
 
-fn parse_mode(s: &mut &str) -> Result<Mode> {
+fn parse_mode(s: &mut &str) -> ModalResult<Mode> {
     let _ = literal("mode: ").parse_next(s)?;
     let mode = alt((
-        literal("set").map(|_| Mode::Set),
-        literal("count").map(|_| Mode::Count),
-        literal("atomic").map(|_| Mode::Atomic),
+        literal("set").ctx("mode: set").map(|_| Mode::Set),
+        literal("count").ctx("mode: count").map(|_| Mode::Count),
+        literal("atomic").ctx("mode: atomic").map(|_| Mode::Atomic),
     ))
     .parse_next(s)?;
     let _ = opt(newline).parse_next(s)?;
@@ -79,15 +74,20 @@ pub struct LineRegion {
     pub executed: u32,
 }
 
-fn parse_region(s: &mut &str) -> Result<LineRegion> {
+fn parse_region(s: &mut &str) -> ModalResult<LineRegion> {
     // format: "file_path:start_line.start_column,end_line.end_column statements executed"
-    let file_path = terminated(take_until(1.., ":"), ":").parse_next(s)?.into();
-    let start_line = terminated(dec_uint, ".").parse_next(s)?;
-    let start_column = terminated(dec_uint, ",").parse_next(s)?;
-    let end_line = terminated(dec_uint, ".").parse_next(s)?;
-    let end_column = terminated(dec_uint, " ").parse_next(s)?;
-    let statements = terminated(dec_uint, " ").parse_next(s)?;
-    let executed = dec_uint.parse_next(s)?;
+    let file_path = terminated(take_until(1.., ":"), ":")
+        .ctx("file_path")
+        .parse_next(s)?
+        .into();
+    let start_line = terminated(dec_uint, ".").ctx("start_line").parse_next(s)?;
+    let start_column = terminated(dec_uint, ",")
+        .ctx("start_column")
+        .parse_next(s)?;
+    let end_line = terminated(dec_uint, ".").ctx("end_line").parse_next(s)?;
+    let end_column = terminated(dec_uint, " ").ctx("end_column").parse_next(s)?;
+    let statements = terminated(dec_uint, " ").ctx("statements").parse_next(s)?;
+    let executed = dec_uint.ctx("executed").parse_next(s)?;
 
     Ok(LineRegion {
         file_path,
@@ -102,9 +102,8 @@ fn parse_region(s: &mut &str) -> Result<LineRegion> {
 
 #[cfg(test)]
 mod tests {
-    use super::{InvalidReport, LineRegion, Mode, Report};
+    use super::{LineRegion, Mode, Report};
     use pretty_assertions::assert_eq;
-    use std::str::FromStr;
 
     #[test]
     fn valid_set_report() {
@@ -234,21 +233,21 @@ github.com/owner/repo/file.go:13.14,15.16 17 18";
         let report = "mode: unknown
 github.com/owner/repo/file.go:1.2,3.4 5 6";
         let report = Report::from_str(report);
-        assert_eq!(report, Err(InvalidReport));
+        assert!(report.is_err(), "report was not Err: {:#?}", report);
 
         let report = "mode: atomic
 github.com/owner/repo/file.go:1,2.3,4 5 6";
         let report = Report::from_str(report);
-        assert_eq!(report, Err(InvalidReport));
+        assert!(report.is_err(), "report was not Err: {:#?}", report);
 
         let report = "mode: atomic
 github.com/owner/repo/file.go";
         let report = Report::from_str(report);
-        assert_eq!(report, Err(InvalidReport));
+        assert!(report.is_err(), "report was not Err: {:#?}", report);
 
         let report = "mode: atomic
 :1.2,3.4 5 6";
         let report = Report::from_str(report);
-        assert_eq!(report, Err(InvalidReport));
+        assert!(report.is_err(), "report was not Err: {:#?}", report);
     }
 }

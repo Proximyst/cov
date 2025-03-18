@@ -1,0 +1,11 @@
+[package]
+name = "sample"
+authors.workspace = true
+version.workspace = true
+license.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description.workspace = true
+publish.workspace = true
+
+[dependencies]

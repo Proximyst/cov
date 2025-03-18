@@ -10,6 +10,12 @@
 //!   * cobertura: CXX have Lcov. Jest has Lcov.
 //!   * Jest JSON: Jest has Lcov.
 
+use winnow::{
+    ModalParser, Parser,
+    error::{AddContext, ErrMode, ParserError, StrContext},
+    stream::Stream,
+};
+
 mod golang;
 mod jacoco;
 mod lcov;
@@ -19,3 +25,20 @@ mod lcov;
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
 #[error("the report was formatted incorrectly")]
 pub struct InvalidReport;
+
+/// Handy extensions for parsers.
+trait ParserExt<I, O, E> {
+    fn ctx(self, context: &'static str) -> impl ModalParser<I, O, E>;
+}
+
+impl<P, I, O, E> ParserExt<I, O, E> for P
+where
+    P: ModalParser<I, O, E>,
+    P: Parser<I, O, ErrMode<E>>,
+    E: ParserError<I> + AddContext<I, StrContext>,
+    I: Stream,
+{
+    fn ctx(self, context: &'static str) -> impl ModalParser<I, O, E> {
+        self.context(StrContext::Label(context))
+    }
+}

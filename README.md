@@ -50,6 +50,8 @@ The backend is written in Rust, and the frontend is written in TypeScript.
 To build the platform, use Just: `just build`. This will build the backend and frontend.
 There are more recipes in the justfile: run `just -l` to see them and their assumed dependencies.
 
+If you need samples to test with, you can run `just samples` to generate some sample data. If you have GNU coreutils installed, this will be parallelised.
+
 ## Licence
 
 `cov` is licensed under the MIT licence. See the [LICENCE](LICENCE) file for more information.
