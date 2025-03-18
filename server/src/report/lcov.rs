@@ -1261,82 +1261,677 @@ LF:11
 LH:7
 end_of_record
 "#;
-        let _report = Report::from_str(report).unwrap();
+        let report = Report::from_str(report).unwrap();
+        assert_eq!(
+            report,
+            Report {
+                tests: vec![
+                    Test {
+                        test_name: String::new(),
+                        source_file_name: "/home/mariell/work/cov/samples/cpp/sample.cpp".into(),
+                        functions: vec![
+                            Function {
+                                name: "_Z3minIiET_S0_S0_".into(),
+                                line_number_start: 3,
+                                line_number_end: Some(3),
+                                execution_count: 501,
+                                aliases: vec![("_Z3minIiET_S0_S0_".into(), 501)],
+                            },
+                            Function {
+                                name: "_Z3maxIiET_S0_S0_".into(),
+                                line_number_start: 5,
+                                line_number_end: Some(5),
+                                execution_count: 1,
+                                aliases: vec![("_Z3maxIiET_S0_S0_".into(), 1)],
+                            },
+                            Function {
+                                name: "_ZN6sample5Adder3addEii".into(),
+                                line_number_start: 8,
+                                line_number_end: Some(20),
+                                execution_count: 501,
+                                aliases: vec![("_ZN6sample5Adder3addEii".into(), 501)],
+                            },
+                        ],
+                        functions_hit: 3,
+                        functions_found: 3,
+                        branches: vec![
+                            Branch {
+                                line_number: 3,
+                                exception: false,
+                                block: 0,
+                                branch: "0".into(),
+                                taken: 501,
+                            },
+                            Branch {
+                                line_number: 3,
+                                exception: false,
+                                block: 0,
+                                branch: "1".into(),
+                                taken: 0,
+                            },
+                            Branch {
+                                line_number: 5,
+                                exception: false,
+                                block: 0,
+                                branch: "0".into(),
+                                taken: 0,
+                            },
+                            Branch {
+                                line_number: 5,
+                                exception: false,
+                                block: 0,
+                                branch: "1".into(),
+                                taken: 1,
+                            },
+                            Branch {
+                                line_number: 9,
+                                exception: false,
+                                block: 0,
+                                branch: "0".into(),
+                                taken: 1,
+                            },
+                            Branch {
+                                line_number: 9,
+                                exception: false,
+                                block: 0,
+                                branch: "1".into(),
+                                taken: 500,
+                            },
+                            Branch {
+                                line_number: 9,
+                                exception: false,
+                                block: 0,
+                                branch: "2".into(),
+                                taken: 1,
+                            },
+                            Branch {
+                                line_number: 9,
+                                exception: false,
+                                block: 0,
+                                branch: "3".into(),
+                                taken: 0,
+                            },
+                            Branch {
+                                line_number: 9,
+                                exception: false,
+                                block: 0,
+                                branch: "4".into(),
+                                taken: 1,
+                            },
+                            Branch {
+                                line_number: 9,
+                                exception: false,
+                                block: 0,
+                                branch: "5".into(),
+                                taken: 500,
+                            },
+                            Branch {
+                                line_number: 14,
+                                exception: false,
+                                block: 0,
+                                branch: "0".into(),
+                                taken: 500,
+                            },
+                            Branch {
+                                line_number: 14,
+                                exception: false,
+                                block: 0,
+                                branch: "1".into(),
+                                taken: 0,
+                            },
+                            Branch {
+                                line_number: 14,
+                                exception: false,
+                                block: 0,
+                                branch: "2".into(),
+                                taken: 0,
+                            },
+                            Branch {
+                                line_number: 14,
+                                exception: false,
+                                block: 0,
+                                branch: "3".into(),
+                                taken: 500,
+                            },
+                        ],
+                        branches_found: 14,
+                        branches_hit: 9,
+                        mcdc: vec![],
+                        modified_coverage_conditions_found: 0,
+                        modified_coverage_conditions_hit: 0,
+                        lines: vec![
+                            CoveredLine {
+                                line_number: 3,
+                                execution_count: 501,
+                                checksum: None,
+                            },
+                            CoveredLine {
+                                line_number: 5,
+                                execution_count: 1,
+                                checksum: None,
+                            },
+                            CoveredLine {
+                                line_number: 8,
+                                execution_count: 501,
+                                checksum: None,
+                            },
+                            CoveredLine {
+                                line_number: 9,
+                                execution_count: 501,
+                                checksum: None,
+                            },
+                            CoveredLine {
+                                line_number: 11,
+                                execution_count: 1,
+                                checksum: None,
+                            },
+                            CoveredLine {
+                                line_number: 14,
+                                execution_count: 500,
+                                checksum: None,
+                            },
+                            CoveredLine {
+                                line_number: 16,
+                                execution_count: 0,
+                                checksum: None,
+                            },
+                            CoveredLine {
+                                line_number: 19,
+                                execution_count: 500,
+                                checksum: None,
+                            },
+                        ],
+                        lines_hit: 7,
+                        lines_found: 8,
+                    },
+                    Test {
+                        test_name: String::new(),
+                        source_file_name: "/home/mariell/work/cov/samples/cpp/sample_test.cpp"
+                            .into(),
+                        functions: vec![Function {
+                            name: "main".into(),
+                            line_number_start: 4,
+                            line_number_end: Some(21),
+                            execution_count: 1,
+                            aliases: vec![("main".into(), 1)],
+                        }],
+                        functions_found: 1,
+                        functions_hit: 1,
+                        branches: vec![
+                            Branch {
+                                line_number: 6,
+                                exception: false,
+                                block: 0,
+                                branch: "0".into(),
+                                taken: 500,
+                            },
+                            Branch {
+                                line_number: 6,
+                                exception: false,
+                                block: 0,
+                                branch: "1".into(),
+                                taken: 1,
+                            },
+                            Branch {
+                                line_number: 7,
+                                exception: false,
+                                block: 0,
+                                branch: "0".into(),
+                                taken: 500,
+                            },
+                            Branch {
+                                line_number: 7,
+                                exception: true,
+                                block: 0,
+                                branch: "1".into(),
+                                taken: 0,
+                            },
+                            Branch {
+                                line_number: 8,
+                                exception: false,
+                                block: 0,
+                                branch: "0".into(),
+                                taken: 0,
+                            },
+                            Branch {
+                                line_number: 8,
+                                exception: false,
+                                block: 0,
+                                branch: "1".into(),
+                                taken: 500,
+                            },
+                            Branch {
+                                line_number: 9,
+                                exception: false,
+                                block: 0,
+                                branch: "0".into(),
+                                taken: 0,
+                            },
+                            Branch {
+                                line_number: 9,
+                                exception: true,
+                                block: 0,
+                                branch: "1".into(),
+                                taken: 0,
+                            },
+                            Branch {
+                                line_number: 9,
+                                exception: false,
+                                block: 0,
+                                branch: "2".into(),
+                                taken: 0,
+                            },
+                            Branch {
+                                line_number: 9,
+                                exception: true,
+                                block: 0,
+                                branch: "3".into(),
+                                taken: 0,
+                            },
+                            Branch {
+                                line_number: 9,
+                                exception: false,
+                                block: 0,
+                                branch: "4".into(),
+                                taken: 0,
+                            },
+                            Branch {
+                                line_number: 9,
+                                exception: true,
+                                block: 0,
+                                branch: "5".into(),
+                                taken: 0,
+                            },
+                            Branch {
+                                line_number: 14,
+                                exception: false,
+                                block: 0,
+                                branch: "0".into(),
+                                taken: 1,
+                            },
+                            Branch {
+                                line_number: 14,
+                                exception: true,
+                                block: 0,
+                                branch: "1".into(),
+                                taken: 0,
+                            },
+                            Branch {
+                                line_number: 15,
+                                exception: false,
+                                block: 0,
+                                branch: "0".into(),
+                                taken: 0,
+                            },
+                            Branch {
+                                line_number: 15,
+                                exception: false,
+                                block: 0,
+                                branch: "1".into(),
+                                taken: 1,
+                            },
+                            Branch {
+                                line_number: 16,
+                                exception: false,
+                                block: 0,
+                                branch: "0".into(),
+                                taken: 0,
+                            },
+                            Branch {
+                                line_number: 16,
+                                exception: true,
+                                block: 0,
+                                branch: "1".into(),
+                                taken: 0,
+                            },
+                            Branch {
+                                line_number: 16,
+                                exception: false,
+                                block: 0,
+                                branch: "2".into(),
+                                taken: 0,
+                            },
+                            Branch {
+                                line_number: 16,
+                                exception: true,
+                                block: 0,
+                                branch: "3".into(),
+                                taken: 0,
+                            },
+                            Branch {
+                                line_number: 16,
+                                exception: false,
+                                block: 0,
+                                branch: "4".into(),
+                                taken: 0,
+                            },
+                            Branch {
+                                line_number: 16,
+                                exception: true,
+                                block: 0,
+                                branch: "5".into(),
+                                taken: 0,
+                            },
+                        ],
+                        branches_found: 22,
+                        branches_hit: 6,
+                        mcdc: vec![],
+                        modified_coverage_conditions_found: 0,
+                        modified_coverage_conditions_hit: 0,
+                        lines: vec![
+                            CoveredLine {
+                                line_number: 4,
+                                execution_count: 1,
+                                checksum: None,
+                            },
+                            CoveredLine {
+                                line_number: 6,
+                                execution_count: 501,
+                                checksum: None,
+                            },
+                            CoveredLine {
+                                line_number: 7,
+                                execution_count: 500,
+                                checksum: None,
+                            },
+                            CoveredLine {
+                                line_number: 8,
+                                execution_count: 500,
+                                checksum: None,
+                            },
+                            CoveredLine {
+                                line_number: 9,
+                                execution_count: 0,
+                                checksum: None,
+                            },
+                            CoveredLine {
+                                line_number: 10,
+                                execution_count: 0,
+                                checksum: None,
+                            },
+                            CoveredLine {
+                                line_number: 14,
+                                execution_count: 1,
+                                checksum: None,
+                            },
+                            CoveredLine {
+                                line_number: 15,
+                                execution_count: 1,
+                                checksum: None,
+                            },
+                            CoveredLine {
+                                line_number: 16,
+                                execution_count: 0,
+                                checksum: None,
+                            },
+                            CoveredLine {
+                                line_number: 17,
+                                execution_count: 0,
+                                checksum: None,
+                            },
+                            CoveredLine {
+                                line_number: 20,
+                                execution_count: 1,
+                                checksum: None,
+                            },
+                        ],
+                        lines_found: 11,
+                        lines_hit: 7,
+                    },
+                ]
+            }
+        );
     }
 
     #[test]
     fn parses_valid_js_coverage() {
         let report = r#"
 TN:
-SF:/home/mariell/work/cov/samples/c/helpers.c
-FNL:0,3,5
-FNA:0,501,min
-FNL:1,7,9
-FNA:1,1,max
+SF:helpers.js
+FN:1,min
+FN:5,max
 FNF:2
 FNH:2
-DA:3,501
-DA:4,501
-DA:7,1
-DA:8,1
-LF:4
-LH:4
+FNDA:501,min
+FNDA:1,max
+DA:2,501
+DA:6,1
+DA:9,1
+LF:3
+LH:3
+BRDA:2,0,0,501
+BRDA:2,0,1,0
+BRDA:6,1,0,0
+BRDA:6,1,1,1
+BRF:4
+BRH:2
 end_of_record
 TN:
-SF:/home/mariell/work/cov/samples/c/sample.c
-FNL:0,4,16
-FNA:0,501,add
+SF:index.js
+FN:3,add
 FNF:1
 FNH:1
-BRDA:5,0,0,1
-BRDA:5,0,1,500
-BRDA:5,0,2,1
-BRDA:5,0,3,0
-BRDA:10,0,0,500
-BRDA:10,0,1,0
-BRDA:10,0,2,0
-BRDA:10,0,3,500
+FNDA:501,add
+DA:1,1
+DA:4,501
+DA:6,1
+DA:9,500
+DA:11,0
+DA:14,500
+DA:16,1
+LF:7
+LH:6
+BRDA:4,0,0,1
+BRDA:4,0,1,500
+BRDA:4,1,0,501
+BRDA:4,1,1,1
+BRDA:9,2,0,0
+BRDA:9,2,1,500
+BRDA:9,3,0,500
+BRDA:9,3,1,0
 BRF:8
-BRH:5
-DA:4,501
-DA:5,501
-DA:7,1
-DA:10,500
-DA:12,0
-DA:15,500
-LF:6
-LH:5
-end_of_record
-TN:
-SF:/home/mariell/work/cov/samples/c/sample_test.c
-FNL:0,4,20
-FNA:0,1,main
-FNF:1
-FNH:1
-BRDA:5,0,0,500
-BRDA:5,0,1,1
-BRDA:7,0,0,0
-BRDA:7,0,1,500
-BRDA:14,0,0,0
-BRDA:14,0,1,1
-BRF:6
-BRH:4
-DA:4,1
-DA:5,501
-DA:6,500
-DA:7,500
-DA:8,0
-DA:9,0
-DA:13,1
-DA:14,1
-DA:15,0
-DA:16,0
-DA:19,1
-LF:11
-LH:7
+BRH:6
 end_of_record
 "#;
-        let _report = Report::from_str(report).unwrap();
+        let report = Report::from_str(report).unwrap();
+        assert_eq!(
+            report,
+            Report {
+                tests: vec![
+                    Test {
+                        test_name: String::new(),
+                        source_file_name: "helpers.js".into(),
+                        functions: vec![
+                            Function {
+                                name: "max".into(),
+                                line_number_start: 5,
+                                line_number_end: None,
+                                execution_count: 1,
+                                aliases: vec![("max".into(), 1)],
+                            },
+                            Function {
+                                name: "min".into(),
+                                line_number_start: 1,
+                                line_number_end: None,
+                                execution_count: 501,
+                                aliases: vec![("min".into(), 501)],
+                            },
+                        ],
+                        functions_found: 2,
+                        functions_hit: 2,
+                        branches: vec![
+                            Branch {
+                                line_number: 2,
+                                exception: false,
+                                block: 0,
+                                branch: "0".into(),
+                                taken: 501,
+                            },
+                            Branch {
+                                line_number: 2,
+                                exception: false,
+                                block: 0,
+                                branch: "1".into(),
+                                taken: 0,
+                            },
+                            Branch {
+                                line_number: 6,
+                                exception: false,
+                                block: 1,
+                                branch: "0".into(),
+                                taken: 0,
+                            },
+                            Branch {
+                                line_number: 6,
+                                exception: false,
+                                block: 1,
+                                branch: "1".into(),
+                                taken: 1,
+                            },
+                        ],
+                        branches_found: 4,
+                        branches_hit: 2,
+                        mcdc: vec![],
+                        modified_coverage_conditions_found: 0,
+                        modified_coverage_conditions_hit: 0,
+                        lines: vec![
+                            CoveredLine {
+                                line_number: 2,
+                                execution_count: 501,
+                                checksum: None,
+                            },
+                            CoveredLine {
+                                line_number: 6,
+                                execution_count: 1,
+                                checksum: None,
+                            },
+                            CoveredLine {
+                                line_number: 9,
+                                execution_count: 1,
+                                checksum: None,
+                            },
+                        ],
+                        lines_hit: 3,
+                        lines_found: 3,
+                    },
+                    Test {
+                        test_name: String::new(),
+                        source_file_name: "index.js".into(),
+                        functions: vec![Function {
+                            name: "add".into(),
+                            line_number_start: 3,
+                            line_number_end: None,
+                            execution_count: 501,
+                            aliases: vec![("add".into(), 501)],
+                        }],
+                        functions_hit: 1,
+                        functions_found: 1,
+                        branches: vec![
+                            Branch {
+                                line_number: 4,
+                                exception: false,
+                                block: 0,
+                                branch: "0".into(),
+                                taken: 1,
+                            },
+                            Branch {
+                                line_number: 4,
+                                exception: false,
+                                block: 0,
+                                branch: "1".into(),
+                                taken: 500,
+                            },
+                            Branch {
+                                line_number: 4,
+                                exception: false,
+                                block: 1,
+                                branch: "0".into(),
+                                taken: 501,
+                            },
+                            Branch {
+                                line_number: 4,
+                                exception: false,
+                                block: 1,
+                                branch: "1".into(),
+                                taken: 1,
+                            },
+                            Branch {
+                                line_number: 9,
+                                exception: false,
+                                block: 2,
+                                branch: "0".into(),
+                                taken: 0,
+                            },
+                            Branch {
+                                line_number: 9,
+                                exception: false,
+                                block: 2,
+                                branch: "1".into(),
+                                taken: 500,
+                            },
+                            Branch {
+                                line_number: 9,
+                                exception: false,
+                                block: 3,
+                                branch: "0".into(),
+                                taken: 500,
+                            },
+                            Branch {
+                                line_number: 9,
+                                exception: false,
+                                block: 3,
+                                branch: "1".into(),
+                                taken: 0,
+                            },
+                        ],
+                        branches_found: 8,
+                        branches_hit: 6,
+                        mcdc: vec![],
+                        modified_coverage_conditions_found: 0,
+                        modified_coverage_conditions_hit: 0,
+                        lines: vec![
+                            CoveredLine {
+                                line_number: 1,
+                                execution_count: 1,
+                                checksum: None,
+                            },
+                            CoveredLine {
+                                line_number: 4,
+                                execution_count: 501,
+                                checksum: None,
+                            },
+                            CoveredLine {
+                                line_number: 6,
+                                execution_count: 1,
+                                checksum: None,
+                            },
+                            CoveredLine {
+                                line_number: 9,
+                                execution_count: 500,
+                                checksum: None,
+                            },
+                            CoveredLine {
+                                line_number: 11,
+                                execution_count: 0,
+                                checksum: None,
+                            },
+                            CoveredLine {
+                                line_number: 14,
+                                execution_count: 500,
+                                checksum: None,
+                            },
+                            CoveredLine {
+                                line_number: 16,
+                                execution_count: 1,
+                                checksum: None,
+                            },
+                        ],
+                        lines_hit: 6,
+                        lines_found: 7,
+                    },
+                ],
+            },
+        );
     }
 
     #[test]
@@ -1394,6 +1989,232 @@ LF:27
 LH:21
 end_of_record
 "#;
-        let _report = Report::from_str(report).unwrap();
+        let report = Report::from_str(report).unwrap();
+        assert_eq!(
+            report,
+            Report {
+                tests: vec![Test {
+                    test_name: String::new(),
+                    source_file_name: "/home/mariell/work/cov/samples/rust/src/lib.rs".into(),
+                    functions: vec![
+                        Function {
+                            name: "_RNvCs25cOZmasxCc_6sample11called_once".into(),
+                            line_number_start: 13,
+                            line_number_end: None,
+                            execution_count: 1,
+                            aliases: vec![("_RNvCs25cOZmasxCc_6sample11called_once".into(), 1)],
+                        },
+                        Function {
+                            name: "_RNvCs25cOZmasxCc_6sample12never_called".into(),
+                            line_number_start: 5,
+                            line_number_end: None,
+                            execution_count: 0,
+                            aliases: vec![("_RNvCs25cOZmasxCc_6sample12never_called".into(), 0)],
+                        },
+                        Function {
+                            name: "_RNvCs25cOZmasxCc_6sample3add".into(),
+                            line_number_start: 1,
+                            line_number_end: None,
+                            execution_count: 1,
+                            aliases: vec![("_RNvCs25cOZmasxCc_6sample3add".into(), 1)],
+                        },
+                        Function {
+                            name: "_RNvCs25cOZmasxCc_6sample6looped".into(),
+                            line_number_start: 9,
+                            line_number_end: None,
+                            execution_count: 500,
+                            aliases: vec![("_RNvCs25cOZmasxCc_6sample6looped".into(), 500)],
+                        },
+                        Function {
+                            name: "_RNvNtCs25cOZmasxCc_6sample5testss_11test_looped".into(),
+                            line_number_start: 34,
+                            line_number_end: None,
+                            execution_count: 1,
+                            aliases: vec![(
+                                "_RNvNtCs25cOZmasxCc_6sample5testss_11test_looped".into(),
+                                1
+                            )],
+                        },
+                        Function {
+                            name: "_RNvNtCs25cOZmasxCc_6sample5testss_16test_called_once".into(),
+                            line_number_start: 41,
+                            line_number_end: None,
+                            execution_count: 1,
+                            aliases: vec![(
+                                "_RNvNtCs25cOZmasxCc_6sample5testss_16test_called_once".into(),
+                                1
+                            )],
+                        },
+                        Function {
+                            name: "_RNvNtCs25cOZmasxCc_6sample5testss_17test_never_called".into(),
+                            line_number_start: 29,
+                            line_number_end: None,
+                            execution_count: 0,
+                            aliases: vec![(
+                                "_RNvNtCs25cOZmasxCc_6sample5testss_17test_never_called".into(),
+                                0
+                            )],
+                        },
+                        Function {
+                            name: "_RNvNtCs25cOZmasxCc_6sample5testss_8it_works".into(),
+                            line_number_start: 22,
+                            line_number_end: None,
+                            execution_count: 1,
+                            aliases: vec![(
+                                "_RNvNtCs25cOZmasxCc_6sample5testss_8it_works".into(),
+                                1
+                            )],
+                        },
+                    ],
+                    functions_found: 8,
+                    functions_hit: 6,
+                    branches: vec![],
+                    branches_found: 0,
+                    branches_hit: 0,
+                    mcdc: vec![],
+                    modified_coverage_conditions_found: 0,
+                    modified_coverage_conditions_hit: 0,
+                    lines: vec![
+                        CoveredLine {
+                            line_number: 1,
+                            execution_count: 1,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 2,
+                            execution_count: 1,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 3,
+                            execution_count: 1,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 5,
+                            execution_count: 0,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 6,
+                            execution_count: 0,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 7,
+                            execution_count: 0,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 9,
+                            execution_count: 500,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 10,
+                            execution_count: 500,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 11,
+                            execution_count: 500,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 13,
+                            execution_count: 1,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 14,
+                            execution_count: 1,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 15,
+                            execution_count: 1,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 22,
+                            execution_count: 1,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 23,
+                            execution_count: 1,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 24,
+                            execution_count: 1,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 25,
+                            execution_count: 1,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 29,
+                            execution_count: 0,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 30,
+                            execution_count: 0,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 31,
+                            execution_count: 0,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 34,
+                            execution_count: 1,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 35,
+                            execution_count: 501,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 36,
+                            execution_count: 500,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 37,
+                            execution_count: 500,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 38,
+                            execution_count: 1,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 41,
+                            execution_count: 1,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 42,
+                            execution_count: 1,
+                            checksum: None,
+                        },
+                        CoveredLine {
+                            line_number: 43,
+                            execution_count: 1,
+                            checksum: None,
+                        },
+                    ],
+                    lines_hit: 21,
+                    lines_found: 27,
+                }],
+            },
+        );
     }
 }
