@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["server", "client", "proto", "samples/rust"]
+members = ["server", "client", "proto"]
 
 [workspace.package]
 authors = ["Mariell Hoversholm <mariell@mardroemmar.dev>"]

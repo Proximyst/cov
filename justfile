@@ -24,7 +24,6 @@ test-cov:
     mkdir -p target/llvm-cov/
     cargo llvm-cov
     cargo llvm-cov report --lcov --doctests --output-path target/llvm-cov/lcov.info
-    cargo llvm-cov report --json --doctests --output-path target/llvm-cov/cov.json
     cargo llvm-cov report --html --doctests
 
 # Run and collect samples. Read individual justfiles for assumptions.

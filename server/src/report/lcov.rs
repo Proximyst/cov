@@ -265,7 +265,7 @@ fn parse_report(s: &mut &str) -> ModalResult<Report> {
             InputLine::EndOfRecord => {
                 for (_, f) in &functions {
                     if f.name.is_empty() {
-                        fail.ctx("an input function has name").parse_next(s)?;
+                        fail.ctx("an input function has no name").parse_next(s)?;
                     }
                 }
 
@@ -811,11 +811,142 @@ mod tests {
     }
 
     #[test]
+    fn fails_on_lack_of_eor() {
+        let report = r#"
+TN:test
+SF:test.js
+"#;
+        let res = Report::from_str(report);
+        assert!(res.is_err(), "report parsed successfully: {res:#?}");
+
+        // Make sure that the corrected version does parse.
+        let report = r#"
+TN:test
+SF:test.js
+end_of_record
+"#;
+        let res = Report::from_str(report);
+        assert!(res.is_ok(), "corrected fail-safe did not parse: {res:#?}");
+    }
+
+    #[test]
+    fn fails_on_duplicate_test_name() {
+        let report = r#"
+TN:test
+TN:test2
+SF:test.js
+end_of_record
+"#;
+        let res = Report::from_str(report);
+        assert!(res.is_err(), "report parsed successfully: {res:#?}");
+
+        // Make sure that the corrected version does parse.
+        let report = r#"
+TN:test
+SF:test.js
+end_of_record
+"#;
+        let res = Report::from_str(report);
+        assert!(res.is_ok(), "corrected fail-safe did not parse: {res:#?}");
+    }
+
+    #[test]
+    fn fails_on_duplicate_source_file_name() {
+        let report = r#"
+TN:test
+SF:test.js
+SF:test2.js
+end_of_record
+"#;
+        let res = Report::from_str(report);
+        assert!(res.is_err(), "report parsed successfully: {res:#?}");
+
+        // Make sure that the corrected version does parse.
+        let report = r#"
+TN:test
+SF:test.js
+end_of_record
+"#;
+        let res = Report::from_str(report);
+        assert!(res.is_ok(), "corrected fail-safe did not parse: {res:#?}");
+    }
+
+    #[test]
+    fn fails_on_function_alias_without_leader() {
+        let report = r#"
+TN:test
+SF:test.js
+FNA:1,2,test
+end_of_record
+"#;
+        let res = Report::from_str(report);
+        assert!(res.is_err(), "report parsed successfully: {res:#?}");
+
+        // Make sure that the corrected version does parse.
+        let report = r#"
+TN:test
+SF:test.js
+FNL:1,2
+FNA:1,2,test
+end_of_record
+"#;
+        let res = Report::from_str(report);
+        assert!(res.is_ok(), "corrected fail-safe did not parse: {res:#?}");
+    }
+
+    #[test]
+    fn fails_on_function_without_name() {
+        let report = r#"
+TN:test
+SF:test.js
+FNL:1,2
+end_of_record
+"#;
+        let res = Report::from_str(report);
+        assert!(res.is_err(), "report parsed successfully: {res:#?}");
+
+        // Make sure that the corrected version does parse.
+        let report = r#"
+TN:test
+SF:test.js
+FNL:1,2
+FNA:1,2,test
+end_of_record
+"#;
+        let res = Report::from_str(report);
+        assert!(res.is_ok(), "corrected fail-safe did not parse: {res:#?}");
+    }
+
+    #[test]
+    fn fails_on_function_data_without_leader() {
+        let report = r#"
+TN:test
+SF:test.js
+FNDA:1,test
+end_of_record
+"#;
+        let res = Report::from_str(report);
+        assert!(res.is_err(), "report parsed successfully: {res:#?}");
+
+        // Make sure that the corrected version does parse.
+        let report = r#"
+TN:test
+SF:test.js
+FN:1,2,test
+FNDA:1,test
+end_of_record
+"#;
+        let res = Report::from_str(report);
+        assert!(res.is_ok(), "corrected fail-safe did not parse: {res:#?}");
+    }
+
+    #[test]
     fn parses_valid_c_coverage() {
         let report = r#"
 #this is a test comment
 TN:
 SF:/home/mariell/work/cov/samples/c/helpers.c
+VER:unittest
 FNL:0,3,5
 FNA:0,501,min
 FNL:1,7,9
