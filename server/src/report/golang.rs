@@ -17,6 +17,7 @@ pub struct Report {
 }
 
 impl Report {
+    #[allow(dead_code)] // TODO: remove this
     pub fn from_str(s: &str) -> Result<Self, ParseError<&str, ContextError>> {
         parse_report.parse(s.trim())
     }

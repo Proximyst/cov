@@ -2,7 +2,7 @@
 //! It can also be accessed via `man geninfo -1` on a system with `lcov` installed; find the `TRACEFILE FORMAT` section.
 
 use super::ParserExt;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use tracing::trace;
 use winnow::{
     ModalResult, Parser, Result,
@@ -135,6 +135,7 @@ pub struct CoveredLine {
 }
 
 impl Report {
+    #[allow(dead_code)] // TODO: Remove this.
     pub fn from_str(s: &str) -> Result<Self, ParseError<&str, ContextError>> {
         parse_report.ctx("parsing report").parse(s.trim())
     }
@@ -153,7 +154,7 @@ fn parse_report(s: &mut &str) -> ModalResult<Report> {
     let mut tests = Vec::new();
 
     let mut test = Test::default();
-    let mut functions = HashMap::new();
+    let mut functions = BTreeMap::new();
 
     while !s.is_empty() {
         let line = cut_err(parse_input_line)
@@ -236,6 +237,8 @@ fn parse_report(s: &mut &str) -> ModalResult<Report> {
                 f.execution_count += alias.execution_count;
                 f.aliases.push((alias.name.into(), alias.execution_count));
             }
+            InputLine::LegacyFunctionLeader(_) => todo!(),
+            InputLine::LegacyFunctionData(_) => todo!(),
             InputLine::EndOfRecord => {
                 for (_, f) in &functions {
                     if f.name.is_empty() {
@@ -278,6 +281,8 @@ enum InputLine<'a> {
     Branch(BRDA<'a>),
     ModernFunctionLeader(ModernFunctionLeader),
     ModernFunctionAlias(ModernFunctionAlias<'a>),
+    LegacyFunctionLeader(LegacyFunctionLeader<'a>),
+    LegacyFunctionData(LegacyFunctionData<'a>),
     EndOfRecord,
 }
 
@@ -306,9 +311,19 @@ fn parse_input_line<'s>(s: &mut &'s str) -> ModalResult<InputLine<'s>> {
         parse_fnh.map(InputLine::FunctionsHit).ctx("functions hit"),
         parse_da.map(InputLine::LineData).ctx("line data"),
         parse_mcdc.map(InputLine::Mcdc).ctx("mcdc"),
-        parse_brda.map(InputLine::Branch).ctx("brda"),
-        parse_fnl.map(InputLine::ModernFunctionLeader).ctx("fnl"),
-        parse_fna.map(InputLine::ModernFunctionAlias).ctx("fna"),
+        parse_brda.map(InputLine::Branch).ctx("branch"),
+        parse_fnl
+            .map(InputLine::ModernFunctionLeader)
+            .ctx("modern function leader"),
+        parse_fna
+            .map(InputLine::ModernFunctionAlias)
+            .ctx("modern function alias"),
+        parse_fn
+            .map(InputLine::LegacyFunctionLeader)
+            .ctx("legacy function leader"),
+        parse_fnda
+            .map(InputLine::LegacyFunctionData)
+            .ctx("legacy function data"),
         "end_of_record"
             .map(|_| InputLine::EndOfRecord)
             .ctx("end of record"),
@@ -497,6 +512,45 @@ fn parse_fna<'s>(s: &mut &'s str) -> ModalResult<ModernFunctionAlias<'s>> {
     let name = till_line_ending.parse_next(s)?;
     Ok(ModernFunctionAlias {
         index,
+        execution_count,
+        name,
+    })
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct LegacyFunctionLeader<'a> {
+    pub line_number: u32,
+    pub line_number_end: Option<u32>,
+    pub name: &'a str,
+}
+
+fn parse_fn<'s>(s: &mut &'s str) -> ModalResult<LegacyFunctionLeader<'s>> {
+    "FN:".parse_next(s)?;
+    let line_number = terminated(dec_uint, ",").ctx("line_number").parse_next(s)?;
+    let line_number_end = opt(terminated(dec_uint, ","))
+        .ctx("line_number_end")
+        .parse_next(s)?;
+    let name = till_line_ending.ctx("name").parse_next(s)?;
+    Ok(LegacyFunctionLeader {
+        line_number,
+        line_number_end,
+        name,
+    })
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct LegacyFunctionData<'a> {
+    pub execution_count: u32,
+    pub name: &'a str,
+}
+
+fn parse_fnda<'s>(s: &mut &'s str) -> ModalResult<LegacyFunctionData<'s>> {
+    "FNDA:".parse_next(s)?;
+    let execution_count = terminated(dec_uint, ",")
+        .ctx("execution_count")
+        .parse_next(s)?;
+    let name = till_line_ending.ctx("name").parse_next(s)?;
+    Ok(LegacyFunctionData {
         execution_count,
         name,
     })
@@ -816,18 +870,18 @@ end_of_record
                         source_file_name: "/home/mariell/work/cov/samples/c/helpers.c".into(),
                         functions: vec![
                             Function {
-                                name: "max".into(),
-                                line_number_start: 7,
-                                line_number_end: Some(9),
-                                execution_count: 1,
-                                aliases: vec![("max".into(), 1)],
-                            },
-                            Function {
                                 name: "min".into(),
                                 line_number_start: 3,
                                 line_number_end: Some(5),
                                 execution_count: 501,
                                 aliases: vec![("min".into(), 501)],
+                            },
+                            Function {
+                                name: "max".into(),
+                                line_number_start: 7,
+                                line_number_end: Some(9),
+                                execution_count: 1,
+                                aliases: vec![("max".into(), 1)],
                             },
                         ],
                         functions_found: 2,
