@@ -11,3 +11,4 @@ samples/java/target/
 samples/jest/node_modules/
 samples/jest/coverage/
 samples/kotlin/target/
+samples/rust/target/

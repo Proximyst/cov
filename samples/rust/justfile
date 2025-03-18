@@ -1,0 +1,11 @@
+# Run the sample tests. Requires cargo and cargo-llvm-cov.
+test: _assert_installed
+    rustup component add llvm-tools-preview
+    cargo llvm-cov
+    mkdir -p target/llvm-cov
+    cargo llvm-cov report --lcov --output-path target/llvm-cov/lcov.info
+
+# Ensure all required tools are installed.
+_assert_installed:
+    command -v cargo &>/dev/null
+    cargo llvm-cov --version &>/dev/null

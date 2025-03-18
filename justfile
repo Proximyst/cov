@@ -1,7 +1,7 @@
 # Format all files in the repository. Assumes cargo is installed. Taplo is optional but recommended.
 fmt:
     taplo --version &>/dev/null && taplo fmt || true
-    cargo fmt
+    cargo +nightly fmt
 
 # Build the entire project. Assumes cargo is installed.
 build:
@@ -43,6 +43,8 @@ _samples-jest:
     cd samples/jest && just
 _samples-kotlin:
     cd samples/kotlin && just
+_samples-rust:
+    cd samples/rust && just
 
 _parallel_samples:
     #!/bin/bash
@@ -53,8 +55,9 @@ _parallel_samples:
     (stdbuf -oL just _samples-java   | sed "s/^/$(printf '\033[32mjava  :\033[0m') /") &
     (stdbuf -oL just _samples-jest   | sed "s/^/$(printf '\033[35mjest  :\033[0m') /") &
     (stdbuf -oL just _samples-kotlin | sed "s/^/$(printf '\033[35mkotlin:\033[0m') /") &
+    (stdbuf -oL just _samples-rust   | sed "s/^/$(printf '\033[35mrust  :\033[0m') /") &
     trap 'kill $(jobs -pr)' SIGINT
     wait
 
 # Runs samples sequentially. Useful for when you need to find out which sample failed, or want it to go slow.
-samples-sequential: && _samples-golang _samples-java _samples-c _samples-cpp _samples-jest _samples-kotlin
+samples-sequential: && _samples-golang _samples-java _samples-c _samples-cpp _samples-jest _samples-kotlin _samples-rust

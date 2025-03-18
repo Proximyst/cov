@@ -1,10 +1,4 @@
-function min(a, b) {
-  return a < b ? a : b;
-}
-
-function max(a, b) {
-  return a > b ? a : b;
-}
+const { min, max } = require("./helpers");
 
 function add(a, b) {
   if (min(a, b) == 9 && max(a, b) == 10) {
