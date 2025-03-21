@@ -52,7 +52,7 @@ pub struct Record<'a> {
     pub branches_hit: u32,
 
     /// The MCDC coverage for this test.
-    pub mcdc: Vec<MCDC<'a>>,
+    pub mcdc: Vec<Mcdc<'a>>,
 
     /// How many modified coverage conditions were found in this source file.
     pub modified_coverage_conditions_found: u32,
@@ -107,7 +107,7 @@ pub struct Branch<'a> {
 
 /// MD/DC: Modified Decision/Condition Coverage.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MCDC<'a> {
+pub struct Mcdc<'a> {
     /// The line number where this MCDC group is located.
     pub line_number: u32,
     /// The number of conditions in this MCDC group.
@@ -147,9 +147,10 @@ impl<'a> Report<'a> {
 /// This acts as a state machine: it will read each line, slowly building up a [`Report`] to return.
 /// When all lines are consumed, it will return the report.
 fn parse_report<'a>(s: &mut &'a str) -> ModalResult<Report<'a>> {
-    while let Some(_) = opt(terminated(parse_comment.ctx("comment"), opt(line_ending)))
+    while opt(terminated(parse_comment.ctx("comment"), opt(line_ending)))
         .ctx("discarding all comments")
         .parse_next(s)?
+        .is_some()
     {}
 
     let mut tests = Vec::new();
@@ -174,14 +175,14 @@ fn parse_report<'a>(s: &mut &'a str) -> ModalResult<Report<'a>> {
                 if !record.test_name.is_empty() {
                     fail.ctx("two test name fields were given").parse_next(s)?;
                 }
-                record.test_name = name.into();
+                record.test_name = name;
             }
             InputLine::SourceFileName(name) => {
                 if !record.source_file_name.is_empty() {
                     fail.ctx("two source file name fields were given")
                         .parse_next(s)?;
                 }
-                record.source_file_name = name.into();
+                record.source_file_name = name;
             }
             InputLine::SourceCodeVersion(version) => {
                 trace!(version, "skipping source code version")
@@ -202,7 +203,7 @@ fn parse_report<'a>(s: &mut &'a str) -> ModalResult<Report<'a>> {
                 });
             }
             InputLine::Mcdc(mcdc) => {
-                record.mcdc.push(MCDC {
+                record.mcdc.push(Mcdc {
                     line_number: mcdc.line_number,
                     group_size: mcdc.group_size,
                     sense: mcdc.sense,
@@ -264,7 +265,7 @@ fn parse_report<'a>(s: &mut &'a str) -> ModalResult<Report<'a>> {
                 f.aliases.push((f.name, data.execution_count));
             }
             InputLine::EndOfRecord => {
-                for (_, f) in &functions {
+                for f in functions.values() {
                     if f.name.is_empty() {
                         fail.ctx("an input function has no name").parse_next(s)?;
                     }
