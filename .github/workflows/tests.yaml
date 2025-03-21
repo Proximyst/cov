@@ -23,7 +23,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
@@ -42,7 +42,7 @@ jobs:
     name: Rust formatting check
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Set up stable Rust
         run: rustup default stable
       - name: Check formatting
@@ -53,7 +53,7 @@ jobs:
     name: Rust clippy
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Set up stable Rust
         run: rustup default stable
       - name: Check clippy
