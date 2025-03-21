@@ -9,6 +9,7 @@ use axum::{
     middleware::Next,
     response::{IntoResponse, Response},
 };
+use metrics_exporter_prometheus::PrometheusHandle;
 use proto::{
     error,
     health::{Health, State},
@@ -79,8 +80,14 @@ pub fn spawn_health_actor(
     args: &HttpArgs,
     health: Sender<(Component, State)>,
     current: watch::Receiver<Health>,
+    metrics: PrometheusHandle,
 ) {
-    set.spawn(health::health_api_actor(args.health_addr, health, current));
+    set.spawn(health::health_api_actor(
+        args.health_addr,
+        health,
+        current,
+        metrics,
+    ));
 }
 
 pub fn spawn_rest_actor(

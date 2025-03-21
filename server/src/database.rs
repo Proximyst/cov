@@ -172,10 +172,12 @@ async fn command_actor(
         tokio::spawn(async move {
             match process(pools, command).await {
                 Ok(()) => {
-                    counter!("database_commands_processed", "outcome" => "success").increment(1);
+                    counter!("cov.database.commands_processed", "outcome" => "success")
+                        .increment(1);
                 }
                 Err(err) => {
-                    counter!("database_commands_processed", "outcome" => "failure").increment(1);
+                    counter!("cov.database.commands_processed", "outcome" => "failure")
+                        .increment(1);
                     error!(?err, "failed to process command");
                 }
             }
@@ -234,17 +236,28 @@ async fn health_check(pool: &Pool, db: &'static str) -> bool {
     match pool.get().await {
         Ok(conn) => match conn.query("SELECT 1", &[]).await {
             Ok(_) => {
-                counter!("database_health_check_successes", "database" => db).increment(1);
+                counter!("cov.database.health_check",
+                    "outcome" => "success",
+                    "database" => db)
+                .increment(1);
                 true
             }
             Err(err) => {
-                counter!("database_health_check_failures", "database" => db).increment(1);
+                counter!("cov.database.health_check",
+                    "outcome" => "failure",
+                    "database" => db,
+                    "reason" => "select-error")
+                .increment(1);
                 warn!(db, ?err, "failed to check database health");
                 false
             }
         },
         Err(err) => {
-            counter!("database_health_check_failures", "database" => db).increment(1);
+            counter!("cov.database.health_check",
+                "outcome" => "failure",
+                "database" => db,
+                "reason" => "acquire-connection")
+            .increment(1);
             warn!(
                 db,
                 ?err,
@@ -269,10 +282,10 @@ async fn health_check_actor(pools: Pools, health_tx: mpsc::Sender<(Component, he
         let ro_healthy = ro_healthy.await.unwrap_or(true);
 
         let health = if rw_healthy && ro_healthy {
-            counter!("database_health_check", "state" => "healthy").increment(1);
+            counter!("cov.database.health_check", "state" => "healthy").increment(1);
             health::State::Healthy
         } else {
-            counter!("database_health_check", "state" => "unhealthy").increment(1);
+            counter!("cov.database.health_check", "state" => "unhealthy").increment(1);
             health::State::Unhealthy(String::from("database health check failed"))
         };
         let Ok(()) = health_tx.send((Component::Database, health)).await else {

@@ -1,6 +1,4 @@
-use super::InvalidReport;
 use serde::Deserialize;
-use std::str::FromStr;
 
 /// A JaCoCo report detailing Java code coverage.
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
@@ -17,11 +15,9 @@ pub struct Report {
     pub packages: Vec<Package>,
 }
 
-impl FromStr for Report {
-    type Err = InvalidReport;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        quick_xml::de::from_str(s).map_err(|_| InvalidReport)
+impl Report {
+    pub fn from_str(s: &str) -> Result<Self, quick_xml::de::DeError> {
+        quick_xml::de::from_str(s)
     }
 }
 
@@ -166,7 +162,6 @@ pub struct Line {
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
-    use std::str::FromStr;
 
     #[test]
     fn parse_valid_report() {
@@ -1204,7 +1199,7 @@ mod tests {
                 ],
                 packages: vec![
                     Package {
-                        name: String::new(),
+                        name: "".into(),
                         classes: vec![Class {
                             name: "Sample".into(),
                             file_name: "Sample.kt".into(),

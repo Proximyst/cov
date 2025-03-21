@@ -1,8 +1,12 @@
 mod ping;
+mod test;
 
 use crate::health::Component;
 use aide::{
-    axum::{ApiRouter, routing::get_with},
+    axum::{
+        ApiRouter,
+        routing::{get_with, post},
+    },
     openapi::OpenApi,
     scalar::Scalar,
 };
@@ -14,6 +18,7 @@ use axum::{
     response::IntoResponse,
     routing::get,
 };
+use metrics::{counter, gauge};
 use proto::health;
 use std::net::SocketAddr;
 use tokio::sync::mpsc::Sender;
@@ -23,6 +28,7 @@ use tracing::error;
 struct OpenApiJson(Bytes);
 
 async fn serve_openapi(State(api): State<OpenApiJson>) -> impl IntoResponse {
+    counter!("cov.http.rest.calls", "endpoint" => "api.json").increment(1);
     (
         StatusCode::OK,
         [(header::CONTENT_TYPE, "application/json")],
@@ -44,6 +50,7 @@ pub(super) async fn rest_api_actor(addr: SocketAddr, health: Sender<(Component, 
             "/api.json",
             get(serve_openapi).layer(middleware::from_fn(super::require_accept_json)),
         )
+        .api_route("/test", post(test::serve_test)) // TODO: Remove this
         .nest_api_service("/v0", api_router);
     let router = router.finish_api_with(&mut api, |t| {
         t.title("cov - REST API")
@@ -54,6 +61,7 @@ pub(super) async fn rest_api_actor(addr: SocketAddr, health: Sender<(Component, 
     // We pre-calculate the body for the api.json endpoint.
     // This makes it not have to be calculated on every request to render the OpenAPI.
     // It is quite small, so this is not a big deal.
+    let start = std::time::Instant::now();
     let json = match serde_json::to_vec(&api) {
         Ok(json) => json,
         Err(err) => {
@@ -61,6 +69,10 @@ pub(super) async fn rest_api_actor(addr: SocketAddr, health: Sender<(Component, 
             return;
         }
     };
+    let end = std::time::Instant::now();
+    gauge!("cov.http.health.openapi", "metric" => "size", "unit" => "bytes").set(json.len() as f64);
+    gauge!("cov.http.health.openapi", "metric" => "serialize", "unit" => "nanos")
+        .set((end - start).as_nanos() as f64);
     let router = router.with_state(OpenApiJson(Bytes::copy_from_slice(&json)));
 
     let listener = match tokio::net::TcpListener::bind(addr).await {

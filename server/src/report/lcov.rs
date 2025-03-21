@@ -14,23 +14,23 @@ use winnow::{
 
 /// A report encapsulates a file of coverage details.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Report {
-    /// Each indiviudal test this file is composed of.
-    pub tests: Vec<Test>,
+pub struct Report<'a> {
+    /// Each indiviudal record this file is composed of.
+    pub record: Vec<Record<'a>>,
 }
 
 /// One individual test and its coverage.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct Test {
+pub struct Record<'a> {
     /// The name of the test. Can be an empty string.
-    pub test_name: String,
+    pub test_name: &'a str,
 
     /// The name of the source file.
     /// Can be relative or absolute. If relative, it is assumed to be relative to the root of the repository.
-    pub source_file_name: String,
+    pub source_file_name: &'a str,
 
     /// The functions in the source file for this test.
-    pub functions: Vec<Function>,
+    pub functions: Vec<Function<'a>>,
 
     /// How many functions were found in this source file.
     ///
@@ -42,7 +42,7 @@ pub struct Test {
     pub functions_hit: u32,
 
     /// The branches in the source file for this test.
-    pub branches: Vec<Branch>,
+    pub branches: Vec<Branch<'a>>,
 
     /// How many branches were found in this source file.
     pub branches_found: u32,
@@ -52,7 +52,7 @@ pub struct Test {
     pub branches_hit: u32,
 
     /// The MCDC coverage for this test.
-    pub mcdc: Vec<MCDC>,
+    pub mcdc: Vec<MCDC<'a>>,
 
     /// How many modified coverage conditions were found in this source file.
     pub modified_coverage_conditions_found: u32,
@@ -62,7 +62,7 @@ pub struct Test {
     pub modified_coverage_conditions_hit: u32,
 
     /// The lines in the source file for this test.
-    pub lines: Vec<CoveredLine>,
+    pub lines: Vec<CoveredLine<'a>>,
 
     /// How many lines were hit in this source file.
     pub lines_hit: u32,
@@ -74,10 +74,10 @@ pub struct Test {
 
 /// A function in the source code. May be linked to multiple tests for the same source file.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Function {
+pub struct Function<'a> {
     /// The name of the function. May be mangled, whose format depends on the source file type.
     /// Technically, a function can have multiple names, but this doesn't particularly help; we choose the first one to represent the function and sum the alias executions.
-    pub name: String,
+    pub name: &'a str,
     /// The line number where the function starts.
     pub line_number_start: u32,
     /// The line number where the function ends, if this is reported.
@@ -86,12 +86,12 @@ pub struct Function {
     /// How many times this function was executed.
     pub execution_count: u32,
     /// The full list of aliases this function has, along with their individual execution counts.
-    pub aliases: Vec<(String, u32)>,
+    pub aliases: Vec<(&'a str, u32)>,
 }
 
 /// A branch in the source code. May be linked to multiple tests for the same source file.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Branch {
+pub struct Branch<'a> {
     /// The line number where the branch is located.
     pub line_number: u32,
     /// Whether this branch is an exception branch.
@@ -100,14 +100,14 @@ pub struct Branch {
     /// The block number of this branch.
     pub block: u32,
     /// An identifier for this branch. This is tool-specific, and may be any arbitrary string (including commas).
-    pub branch: String,
+    pub branch: &'a str,
     /// How many times this branch was taken.
     pub taken: u32,
 }
 
 /// MD/DC: Modified Decision/Condition Coverage.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MCDC {
+pub struct MCDC<'a> {
     /// The line number where this MCDC group is located.
     pub line_number: u32,
     /// The number of conditions in this MCDC group.
@@ -120,23 +120,24 @@ pub struct MCDC {
     pub index: u32,
     /// The expression for this MCDC group.
     /// This is useful to humans and is tool-specific.
-    pub expression: String,
+    pub expression: &'a str,
 }
 
 /// Per-line coverage data.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CoveredLine {
+pub struct CoveredLine<'a> {
     /// The line number where this coverage data is located.
     pub line_number: u32,
     /// How many times this line was executed.
     pub execution_count: u32,
     /// An optional checksum for this line. This is tool-specific.
-    pub checksum: Option<String>,
+    pub checksum: Option<&'a str>,
 }
 
-impl Report {
+impl<'a> Report<'a> {
     #[allow(dead_code)] // TODO: Remove this.
-    pub fn from_str(s: &str) -> Result<Self, ParseError<&str, ContextError>> {
+    // TODO(perf): don't use ContextError outside tests
+    pub fn from_str(s: &'a str) -> Result<Self, ParseError<&'a str, ContextError>> {
         parse_report.ctx("parsing report").parse(s.trim())
     }
 }
@@ -145,7 +146,7 @@ impl Report {
 ///
 /// This acts as a state machine: it will read each line, slowly building up a [`Report`] to return.
 /// When all lines are consumed, it will return the report.
-fn parse_report(s: &mut &str) -> ModalResult<Report> {
+fn parse_report<'a>(s: &mut &'a str) -> ModalResult<Report<'a>> {
     while let Some(_) = opt(terminated(parse_comment.ctx("comment"), opt(line_ending)))
         .ctx("discarding all comments")
         .parse_next(s)?
@@ -158,7 +159,7 @@ fn parse_report(s: &mut &str) -> ModalResult<Report> {
         Modern(u32),
         Legacy(&'a str),
     }
-    let mut test = Test::default();
+    let mut record = Record::default();
     let mut functions = BTreeMap::new();
 
     while !s.is_empty() {
@@ -170,52 +171,52 @@ fn parse_report(s: &mut &str) -> ModalResult<Report> {
         match line {
             InputLine::Comment(comment) => trace!(comment, "skipping comment"),
             InputLine::TestName(name) => {
-                if !test.test_name.is_empty() {
+                if !record.test_name.is_empty() {
                     fail.ctx("two test name fields were given").parse_next(s)?;
                 }
-                test.test_name = name.into();
+                record.test_name = name.into();
             }
             InputLine::SourceFileName(name) => {
-                if !test.source_file_name.is_empty() {
+                if !record.source_file_name.is_empty() {
                     fail.ctx("two source file name fields were given")
                         .parse_next(s)?;
                 }
-                test.source_file_name = name.into();
+                record.source_file_name = name.into();
             }
             InputLine::SourceCodeVersion(version) => {
                 trace!(version, "skipping source code version")
             }
-            InputLine::BranchesHit(hit) => test.branches_hit = hit,
-            InputLine::BranchesFound(found) => test.branches_found = found,
-            InputLine::FunctionsHit(hit) => test.functions_hit = hit,
-            InputLine::FunctionsFound(found) => test.functions_found = found,
-            InputLine::LinesHit(hit) => test.lines_hit = hit,
-            InputLine::LinesFound(found) => test.lines_found = found,
-            InputLine::McdcHit(hit) => test.modified_coverage_conditions_hit = hit,
-            InputLine::McdcFound(found) => test.modified_coverage_conditions_found = found,
+            InputLine::BranchesHit(hit) => record.branches_hit = hit,
+            InputLine::BranchesFound(found) => record.branches_found = found,
+            InputLine::FunctionsHit(hit) => record.functions_hit = hit,
+            InputLine::FunctionsFound(found) => record.functions_found = found,
+            InputLine::LinesHit(hit) => record.lines_hit = hit,
+            InputLine::LinesFound(found) => record.lines_found = found,
+            InputLine::McdcHit(hit) => record.modified_coverage_conditions_hit = hit,
+            InputLine::McdcFound(found) => record.modified_coverage_conditions_found = found,
             InputLine::LineData(da) => {
-                test.lines.push(CoveredLine {
+                record.lines.push(CoveredLine {
                     line_number: da.line_number,
                     execution_count: da.execution_count,
-                    checksum: da.checksum.map(Into::into),
+                    checksum: da.checksum,
                 });
             }
             InputLine::Mcdc(mcdc) => {
-                test.mcdc.push(MCDC {
+                record.mcdc.push(MCDC {
                     line_number: mcdc.line_number,
                     group_size: mcdc.group_size,
                     sense: mcdc.sense,
                     taken: mcdc.taken,
                     index: mcdc.index,
-                    expression: mcdc.expression.into(),
+                    expression: mcdc.expression,
                 });
             }
             InputLine::Branch(brda) => {
-                test.branches.push(Branch {
+                record.branches.push(Branch {
                     line_number: brda.line_number,
                     exception: brda.exception,
                     block: brda.block,
-                    branch: brda.branch.into(),
+                    branch: brda.branch,
                     taken: brda.taken,
                 });
             }
@@ -223,7 +224,7 @@ fn parse_report(s: &mut &str) -> ModalResult<Report> {
                 functions.insert(
                     FnKey::Modern(leader.index),
                     Function {
-                        name: String::new(),
+                        name: "",
                         line_number_start: leader.line_number,
                         line_number_end: leader.line_number_end,
                         execution_count: 0,
@@ -237,16 +238,16 @@ fn parse_report(s: &mut &str) -> ModalResult<Report> {
                 };
 
                 if f.name.is_empty() {
-                    f.name = alias.name.into();
+                    f.name = alias.name;
                 }
                 f.execution_count += alias.execution_count;
-                f.aliases.push((alias.name.into(), alias.execution_count));
+                f.aliases.push((alias.name, alias.execution_count));
             }
             InputLine::LegacyFunctionLeader(leader) => {
                 functions.insert(
                     FnKey::Legacy(leader.name),
                     Function {
-                        name: leader.name.into(),
+                        name: leader.name,
                         line_number_start: leader.line_number,
                         line_number_end: leader.line_number_end,
                         execution_count: 0,
@@ -260,7 +261,7 @@ fn parse_report(s: &mut &str) -> ModalResult<Report> {
                 };
 
                 f.execution_count += data.execution_count;
-                f.aliases.push((f.name.clone(), data.execution_count));
+                f.aliases.push((f.name, data.execution_count));
             }
             InputLine::EndOfRecord => {
                 for (_, f) in &functions {
@@ -269,20 +270,20 @@ fn parse_report(s: &mut &str) -> ModalResult<Report> {
                     }
                 }
 
-                test.functions = functions.values().cloned().collect::<Vec<_>>();
-                tests.push(std::mem::take(&mut test));
+                record.functions = functions.values().cloned().collect::<Vec<_>>();
+                tests.push(std::mem::take(&mut record));
 
                 // We clear instead of take to avoid reallocating a potentially big map.
                 functions.clear();
             }
         }
     }
-    if test != Test::default() {
+    if record != Record::default() {
         // No end_of_record was listed.
         fail.ctx("no end_of_record was listed").parse_next(s)?;
     }
 
-    Ok(Report { tests })
+    Ok(Report { record: tests })
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -1018,24 +1019,24 @@ end_of_record
         assert_eq!(
             report,
             Report {
-                tests: vec![
-                    Test {
-                        test_name: String::new(),
-                        source_file_name: "/home/mariell/work/cov/samples/c/helpers.c".into(),
+                record: vec![
+                    Record {
+                        test_name: "",
+                        source_file_name: "/home/mariell/work/cov/samples/c/helpers.c",
                         functions: vec![
                             Function {
-                                name: "min".into(),
+                                name: "min",
                                 line_number_start: 3,
                                 line_number_end: Some(5),
                                 execution_count: 501,
-                                aliases: vec![("min".into(), 501)],
+                                aliases: vec![("min", 501)],
                             },
                             Function {
-                                name: "max".into(),
+                                name: "max",
                                 line_number_start: 7,
                                 line_number_end: Some(9),
                                 execution_count: 1,
-                                aliases: vec![("max".into(), 1)],
+                                aliases: vec![("max", 1)],
                             },
                         ],
                         functions_found: 2,
@@ -1071,15 +1072,15 @@ end_of_record
                         lines_hit: 4,
                         lines_found: 4,
                     },
-                    Test {
-                        test_name: String::new(),
-                        source_file_name: "/home/mariell/work/cov/samples/c/sample.c".into(),
+                    Record {
+                        test_name: "",
+                        source_file_name: "/home/mariell/work/cov/samples/c/sample.c",
                         functions: vec![Function {
-                            name: "add".into(),
+                            name: "add",
                             line_number_start: 4,
                             line_number_end: Some(16),
                             execution_count: 501,
-                            aliases: vec![("add".into(), 501)],
+                            aliases: vec![("add", 501)],
                         }],
                         functions_found: 1,
                         functions_hit: 1,
@@ -1088,56 +1089,56 @@ end_of_record
                                 line_number: 5,
                                 exception: false,
                                 block: 0,
-                                branch: "0".into(),
+                                branch: "0",
                                 taken: 1,
                             },
                             Branch {
                                 line_number: 5,
                                 exception: false,
                                 block: 0,
-                                branch: "1".into(),
+                                branch: "1",
                                 taken: 500,
                             },
                             Branch {
                                 line_number: 5,
                                 exception: false,
                                 block: 0,
-                                branch: "2".into(),
+                                branch: "2",
                                 taken: 1,
                             },
                             Branch {
                                 line_number: 5,
                                 exception: false,
                                 block: 0,
-                                branch: "3".into(),
+                                branch: "3",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 10,
                                 exception: false,
                                 block: 0,
-                                branch: "0".into(),
+                                branch: "0",
                                 taken: 500,
                             },
                             Branch {
                                 line_number: 10,
                                 exception: false,
                                 block: 0,
-                                branch: "1".into(),
+                                branch: "1",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 10,
                                 exception: false,
                                 block: 0,
-                                branch: "2".into(),
+                                branch: "2",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 10,
                                 exception: false,
                                 block: 0,
-                                branch: "3".into(),
+                                branch: "3",
                                 taken: 500,
                             },
                         ],
@@ -1181,15 +1182,15 @@ end_of_record
                         lines_hit: 5,
                         lines_found: 6,
                     },
-                    Test {
-                        test_name: String::new(),
-                        source_file_name: "/home/mariell/work/cov/samples/c/sample_test.c".into(),
+                    Record {
+                        test_name: "",
+                        source_file_name: "/home/mariell/work/cov/samples/c/sample_test.c",
                         functions: vec![Function {
-                            name: "main".into(),
+                            name: "main",
                             line_number_start: 4,
                             line_number_end: Some(20),
                             execution_count: 1,
-                            aliases: vec![("main".into(), 1)],
+                            aliases: vec![("main", 1)],
                         }],
                         functions_found: 1,
                         functions_hit: 1,
@@ -1198,42 +1199,42 @@ end_of_record
                                 line_number: 5,
                                 exception: false,
                                 block: 0,
-                                branch: "0".into(),
+                                branch: "0",
                                 taken: 500,
                             },
                             Branch {
                                 line_number: 5,
                                 exception: false,
                                 block: 0,
-                                branch: "1".into(),
+                                branch: "1",
                                 taken: 1,
                             },
                             Branch {
                                 line_number: 7,
                                 exception: false,
                                 block: 0,
-                                branch: "0".into(),
+                                branch: "0",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 7,
                                 exception: false,
                                 block: 0,
-                                branch: "1".into(),
+                                branch: "1",
                                 taken: 500,
                             },
                             Branch {
                                 line_number: 14,
                                 exception: false,
                                 block: 0,
-                                branch: "0".into(),
+                                branch: "0",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 14,
                                 exception: false,
                                 block: 0,
-                                branch: "1".into(),
+                                branch: "1",
                                 taken: 1,
                             },
                         ],
@@ -1396,31 +1397,31 @@ end_of_record
         assert_eq!(
             report,
             Report {
-                tests: vec![
-                    Test {
-                        test_name: String::new(),
-                        source_file_name: "/home/mariell/work/cov/samples/cpp/sample.cpp".into(),
+                record: vec![
+                    Record {
+                        test_name: "",
+                        source_file_name: "/home/mariell/work/cov/samples/cpp/sample.cpp",
                         functions: vec![
                             Function {
-                                name: "_Z3minIiET_S0_S0_".into(),
+                                name: "_Z3minIiET_S0_S0_",
                                 line_number_start: 3,
                                 line_number_end: Some(3),
                                 execution_count: 501,
-                                aliases: vec![("_Z3minIiET_S0_S0_".into(), 501)],
+                                aliases: vec![("_Z3minIiET_S0_S0_", 501)],
                             },
                             Function {
-                                name: "_Z3maxIiET_S0_S0_".into(),
+                                name: "_Z3maxIiET_S0_S0_",
                                 line_number_start: 5,
                                 line_number_end: Some(5),
                                 execution_count: 1,
-                                aliases: vec![("_Z3maxIiET_S0_S0_".into(), 1)],
+                                aliases: vec![("_Z3maxIiET_S0_S0_", 1)],
                             },
                             Function {
-                                name: "_ZN6sample5Adder3addEii".into(),
+                                name: "_ZN6sample5Adder3addEii",
                                 line_number_start: 8,
                                 line_number_end: Some(20),
                                 execution_count: 501,
-                                aliases: vec![("_ZN6sample5Adder3addEii".into(), 501)],
+                                aliases: vec![("_ZN6sample5Adder3addEii", 501)],
                             },
                         ],
                         functions_hit: 3,
@@ -1430,98 +1431,98 @@ end_of_record
                                 line_number: 3,
                                 exception: false,
                                 block: 0,
-                                branch: "0".into(),
+                                branch: "0",
                                 taken: 501,
                             },
                             Branch {
                                 line_number: 3,
                                 exception: false,
                                 block: 0,
-                                branch: "1".into(),
+                                branch: "1",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 5,
                                 exception: false,
                                 block: 0,
-                                branch: "0".into(),
+                                branch: "0",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 5,
                                 exception: false,
                                 block: 0,
-                                branch: "1".into(),
+                                branch: "1",
                                 taken: 1,
                             },
                             Branch {
                                 line_number: 9,
                                 exception: false,
                                 block: 0,
-                                branch: "0".into(),
+                                branch: "0",
                                 taken: 1,
                             },
                             Branch {
                                 line_number: 9,
                                 exception: false,
                                 block: 0,
-                                branch: "1".into(),
+                                branch: "1",
                                 taken: 500,
                             },
                             Branch {
                                 line_number: 9,
                                 exception: false,
                                 block: 0,
-                                branch: "2".into(),
+                                branch: "2",
                                 taken: 1,
                             },
                             Branch {
                                 line_number: 9,
                                 exception: false,
                                 block: 0,
-                                branch: "3".into(),
+                                branch: "3",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 9,
                                 exception: false,
                                 block: 0,
-                                branch: "4".into(),
+                                branch: "4",
                                 taken: 1,
                             },
                             Branch {
                                 line_number: 9,
                                 exception: false,
                                 block: 0,
-                                branch: "5".into(),
+                                branch: "5",
                                 taken: 500,
                             },
                             Branch {
                                 line_number: 14,
                                 exception: false,
                                 block: 0,
-                                branch: "0".into(),
+                                branch: "0",
                                 taken: 500,
                             },
                             Branch {
                                 line_number: 14,
                                 exception: false,
                                 block: 0,
-                                branch: "1".into(),
+                                branch: "1",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 14,
                                 exception: false,
                                 block: 0,
-                                branch: "2".into(),
+                                branch: "2",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 14,
                                 exception: false,
                                 block: 0,
-                                branch: "3".into(),
+                                branch: "3",
                                 taken: 500,
                             },
                         ],
@@ -1575,16 +1576,16 @@ end_of_record
                         lines_hit: 7,
                         lines_found: 8,
                     },
-                    Test {
-                        test_name: String::new(),
+                    Record {
+                        test_name: "",
                         source_file_name: "/home/mariell/work/cov/samples/cpp/sample_test.cpp"
                             .into(),
                         functions: vec![Function {
-                            name: "main".into(),
+                            name: "main",
                             line_number_start: 4,
                             line_number_end: Some(21),
                             execution_count: 1,
-                            aliases: vec![("main".into(), 1)],
+                            aliases: vec![("main", 1)],
                         }],
                         functions_found: 1,
                         functions_hit: 1,
@@ -1593,154 +1594,154 @@ end_of_record
                                 line_number: 6,
                                 exception: false,
                                 block: 0,
-                                branch: "0".into(),
+                                branch: "0",
                                 taken: 500,
                             },
                             Branch {
                                 line_number: 6,
                                 exception: false,
                                 block: 0,
-                                branch: "1".into(),
+                                branch: "1",
                                 taken: 1,
                             },
                             Branch {
                                 line_number: 7,
                                 exception: false,
                                 block: 0,
-                                branch: "0".into(),
+                                branch: "0",
                                 taken: 500,
                             },
                             Branch {
                                 line_number: 7,
                                 exception: true,
                                 block: 0,
-                                branch: "1".into(),
+                                branch: "1",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 8,
                                 exception: false,
                                 block: 0,
-                                branch: "0".into(),
+                                branch: "0",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 8,
                                 exception: false,
                                 block: 0,
-                                branch: "1".into(),
+                                branch: "1",
                                 taken: 500,
                             },
                             Branch {
                                 line_number: 9,
                                 exception: false,
                                 block: 0,
-                                branch: "0".into(),
+                                branch: "0",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 9,
                                 exception: true,
                                 block: 0,
-                                branch: "1".into(),
+                                branch: "1",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 9,
                                 exception: false,
                                 block: 0,
-                                branch: "2".into(),
+                                branch: "2",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 9,
                                 exception: true,
                                 block: 0,
-                                branch: "3".into(),
+                                branch: "3",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 9,
                                 exception: false,
                                 block: 0,
-                                branch: "4".into(),
+                                branch: "4",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 9,
                                 exception: true,
                                 block: 0,
-                                branch: "5".into(),
+                                branch: "5",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 14,
                                 exception: false,
                                 block: 0,
-                                branch: "0".into(),
+                                branch: "0",
                                 taken: 1,
                             },
                             Branch {
                                 line_number: 14,
                                 exception: true,
                                 block: 0,
-                                branch: "1".into(),
+                                branch: "1",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 15,
                                 exception: false,
                                 block: 0,
-                                branch: "0".into(),
+                                branch: "0",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 15,
                                 exception: false,
                                 block: 0,
-                                branch: "1".into(),
+                                branch: "1",
                                 taken: 1,
                             },
                             Branch {
                                 line_number: 16,
                                 exception: false,
                                 block: 0,
-                                branch: "0".into(),
+                                branch: "0",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 16,
                                 exception: true,
                                 block: 0,
-                                branch: "1".into(),
+                                branch: "1",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 16,
                                 exception: false,
                                 block: 0,
-                                branch: "2".into(),
+                                branch: "2",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 16,
                                 exception: true,
                                 block: 0,
-                                branch: "3".into(),
+                                branch: "3",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 16,
                                 exception: false,
                                 block: 0,
-                                branch: "4".into(),
+                                branch: "4",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 16,
                                 exception: true,
                                 block: 0,
-                                branch: "5".into(),
+                                branch: "5",
                                 taken: 0,
                             },
                         ],
@@ -1868,24 +1869,24 @@ end_of_record
         assert_eq!(
             report,
             Report {
-                tests: vec![
-                    Test {
-                        test_name: String::new(),
-                        source_file_name: "helpers.js".into(),
+                record: vec![
+                    Record {
+                        test_name: "",
+                        source_file_name: "helpers.js",
                         functions: vec![
                             Function {
-                                name: "max".into(),
+                                name: "max",
                                 line_number_start: 5,
                                 line_number_end: None,
                                 execution_count: 1,
-                                aliases: vec![("max".into(), 1)],
+                                aliases: vec![("max", 1)],
                             },
                             Function {
-                                name: "min".into(),
+                                name: "min",
                                 line_number_start: 1,
                                 line_number_end: None,
                                 execution_count: 501,
-                                aliases: vec![("min".into(), 501)],
+                                aliases: vec![("min", 501)],
                             },
                         ],
                         functions_found: 2,
@@ -1895,28 +1896,28 @@ end_of_record
                                 line_number: 2,
                                 exception: false,
                                 block: 0,
-                                branch: "0".into(),
+                                branch: "0",
                                 taken: 501,
                             },
                             Branch {
                                 line_number: 2,
                                 exception: false,
                                 block: 0,
-                                branch: "1".into(),
+                                branch: "1",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 6,
                                 exception: false,
                                 block: 1,
-                                branch: "0".into(),
+                                branch: "0",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 6,
                                 exception: false,
                                 block: 1,
-                                branch: "1".into(),
+                                branch: "1",
                                 taken: 1,
                             },
                         ],
@@ -1945,15 +1946,15 @@ end_of_record
                         lines_hit: 3,
                         lines_found: 3,
                     },
-                    Test {
-                        test_name: String::new(),
-                        source_file_name: "index.js".into(),
+                    Record {
+                        test_name: "",
+                        source_file_name: "index.js",
                         functions: vec![Function {
-                            name: "add".into(),
+                            name: "add",
                             line_number_start: 3,
                             line_number_end: None,
                             execution_count: 501,
-                            aliases: vec![("add".into(), 501)],
+                            aliases: vec![("add", 501)],
                         }],
                         functions_hit: 1,
                         functions_found: 1,
@@ -1962,56 +1963,56 @@ end_of_record
                                 line_number: 4,
                                 exception: false,
                                 block: 0,
-                                branch: "0".into(),
+                                branch: "0",
                                 taken: 1,
                             },
                             Branch {
                                 line_number: 4,
                                 exception: false,
                                 block: 0,
-                                branch: "1".into(),
+                                branch: "1",
                                 taken: 500,
                             },
                             Branch {
                                 line_number: 4,
                                 exception: false,
                                 block: 1,
-                                branch: "0".into(),
+                                branch: "0",
                                 taken: 501,
                             },
                             Branch {
                                 line_number: 4,
                                 exception: false,
                                 block: 1,
-                                branch: "1".into(),
+                                branch: "1",
                                 taken: 1,
                             },
                             Branch {
                                 line_number: 9,
                                 exception: false,
                                 block: 2,
-                                branch: "0".into(),
+                                branch: "0",
                                 taken: 0,
                             },
                             Branch {
                                 line_number: 9,
                                 exception: false,
                                 block: 2,
-                                branch: "1".into(),
+                                branch: "1",
                                 taken: 500,
                             },
                             Branch {
                                 line_number: 9,
                                 exception: false,
                                 block: 3,
-                                branch: "0".into(),
+                                branch: "0",
                                 taken: 500,
                             },
                             Branch {
                                 line_number: 9,
                                 exception: false,
                                 block: 3,
-                                branch: "1".into(),
+                                branch: "1",
                                 taken: 0,
                             },
                         ],
@@ -2124,77 +2125,71 @@ end_of_record
         assert_eq!(
             report,
             Report {
-                tests: vec![Test {
-                    test_name: String::new(),
-                    source_file_name: "/home/mariell/work/cov/samples/rust/src/lib.rs".into(),
+                record: vec![Record {
+                    test_name: "",
+                    source_file_name: "/home/mariell/work/cov/samples/rust/src/lib.rs",
                     functions: vec![
                         Function {
-                            name: "_RNvCs25cOZmasxCc_6sample11called_once".into(),
+                            name: "_RNvCs25cOZmasxCc_6sample11called_once",
                             line_number_start: 13,
                             line_number_end: None,
                             execution_count: 1,
-                            aliases: vec![("_RNvCs25cOZmasxCc_6sample11called_once".into(), 1)],
+                            aliases: vec![("_RNvCs25cOZmasxCc_6sample11called_once", 1)],
                         },
                         Function {
-                            name: "_RNvCs25cOZmasxCc_6sample12never_called".into(),
+                            name: "_RNvCs25cOZmasxCc_6sample12never_called",
                             line_number_start: 5,
                             line_number_end: None,
                             execution_count: 0,
-                            aliases: vec![("_RNvCs25cOZmasxCc_6sample12never_called".into(), 0)],
+                            aliases: vec![("_RNvCs25cOZmasxCc_6sample12never_called", 0)],
                         },
                         Function {
-                            name: "_RNvCs25cOZmasxCc_6sample3add".into(),
+                            name: "_RNvCs25cOZmasxCc_6sample3add",
                             line_number_start: 1,
                             line_number_end: None,
                             execution_count: 1,
-                            aliases: vec![("_RNvCs25cOZmasxCc_6sample3add".into(), 1)],
+                            aliases: vec![("_RNvCs25cOZmasxCc_6sample3add", 1)],
                         },
                         Function {
-                            name: "_RNvCs25cOZmasxCc_6sample6looped".into(),
+                            name: "_RNvCs25cOZmasxCc_6sample6looped",
                             line_number_start: 9,
                             line_number_end: None,
                             execution_count: 500,
-                            aliases: vec![("_RNvCs25cOZmasxCc_6sample6looped".into(), 500)],
+                            aliases: vec![("_RNvCs25cOZmasxCc_6sample6looped", 500)],
                         },
                         Function {
-                            name: "_RNvNtCs25cOZmasxCc_6sample5testss_11test_looped".into(),
+                            name: "_RNvNtCs25cOZmasxCc_6sample5testss_11test_looped",
                             line_number_start: 34,
                             line_number_end: None,
                             execution_count: 1,
-                            aliases: vec![(
-                                "_RNvNtCs25cOZmasxCc_6sample5testss_11test_looped".into(),
-                                1
-                            )],
+                            aliases: vec![("_RNvNtCs25cOZmasxCc_6sample5testss_11test_looped", 1)],
                         },
                         Function {
-                            name: "_RNvNtCs25cOZmasxCc_6sample5testss_16test_called_once".into(),
+                            name: "_RNvNtCs25cOZmasxCc_6sample5testss_16test_called_once",
                             line_number_start: 41,
                             line_number_end: None,
                             execution_count: 1,
                             aliases: vec![(
-                                "_RNvNtCs25cOZmasxCc_6sample5testss_16test_called_once".into(),
+                                "_RNvNtCs25cOZmasxCc_6sample5testss_16test_called_once",
                                 1
                             )],
                         },
                         Function {
-                            name: "_RNvNtCs25cOZmasxCc_6sample5testss_17test_never_called".into(),
+                            name: "_RNvNtCs25cOZmasxCc_6sample5testss_17test_never_called",
                             line_number_start: 29,
                             line_number_end: None,
                             execution_count: 0,
                             aliases: vec![(
-                                "_RNvNtCs25cOZmasxCc_6sample5testss_17test_never_called".into(),
+                                "_RNvNtCs25cOZmasxCc_6sample5testss_17test_never_called",
                                 0
                             )],
                         },
                         Function {
-                            name: "_RNvNtCs25cOZmasxCc_6sample5testss_8it_works".into(),
+                            name: "_RNvNtCs25cOZmasxCc_6sample5testss_8it_works",
                             line_number_start: 22,
                             line_number_end: None,
                             execution_count: 1,
-                            aliases: vec![(
-                                "_RNvNtCs25cOZmasxCc_6sample5testss_8it_works".into(),
-                                1
-                            )],
+                            aliases: vec![("_RNvNtCs25cOZmasxCc_6sample5testss_8it_works", 1)],
                         },
                     ],
                     functions_found: 8,

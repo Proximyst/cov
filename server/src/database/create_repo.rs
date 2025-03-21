@@ -28,11 +28,11 @@ pub(super) async fn create_repository(
     reply: oneshot::Sender<Result<(), Error>>,
 ) {
     if reply.is_closed() {
-        counter!("database_command_doa", "command" => "create-repository").increment(1);
+        counter!("cov.database.actor.command_doa", "command" => "create-repository").increment(1);
         return;
     }
 
-    counter!("database_command", "command" => "create-repository").increment(1);
+    counter!("cov.database.command", "command" => "create-repository").increment(1);
     let _ = reply.send(inner_create_repo(pools, cmd).await);
 }
 

@@ -15,7 +15,8 @@ use axum::{
     routing::get,
 };
 use chrono::Utc;
-use metrics::counter;
+use metrics::{counter, gauge, histogram};
+use metrics_exporter_prometheus::PrometheusHandle;
 use proto::health;
 use std::net::SocketAddr;
 use tokio::sync::{mpsc::Sender, watch};
@@ -24,7 +25,7 @@ use tracing::{error, trace};
 async fn serve_health(
     State(health): State<watch::Receiver<health::Health>>,
 ) -> impl IntoApiResponse {
-    counter!("http_calls", "endpoint" => "health").increment(1);
+    counter!("cov.http.calls.health", "endpoint" => "health").increment(1);
     let health = health.borrow().clone();
     let unhealthy = health
         .components
@@ -65,6 +66,7 @@ fn transform_health(t: TransformOperation) -> TransformOperation {
 struct OpenApiJson(Bytes);
 
 async fn serve_openapi(State(api): State<OpenApiJson>) -> impl IntoResponse {
+    counter!("cov.http.health.calls", "endpoint" => "api.json").increment(1);
     (
         StatusCode::OK,
         [(header::CONTENT_TYPE, "application/json")],
@@ -72,10 +74,35 @@ async fn serve_openapi(State(api): State<OpenApiJson>) -> impl IntoResponse {
     )
 }
 
+async fn serve_metrics(State(metrics): State<PrometheusHandle>) -> impl IntoApiResponse {
+    counter!("cov.http.health.calls", "endpoint" => "metrics").increment(1);
+    let start = std::time::Instant::now();
+    let metrics = metrics.render();
+    let end = std::time::Instant::now();
+    histogram!("cov.http.health.metrics", "metric" => "size", "unit" => "bytes")
+        .record(metrics.len() as f64);
+    histogram!("cov.http.health.metrics", "metric" => "render-time", "unit" => "nanos")
+        .record((end - start).as_nanos() as f64);
+    (
+        StatusCode::OK,
+        [(header::CONTENT_TYPE, "text/plain")],
+        metrics,
+    )
+}
+
+fn transform_metrics(t: TransformOperation) -> TransformOperation {
+    t.description("Fetches the current metrics of the system.")
+        .response_with::<200, String, _>(|r| {
+            r.description("The system metrics in Prometheus format.")
+                .example("# TYPE cov_up gauge\ncov_up 1\n\n")
+        })
+}
+
 pub(super) async fn health_api_actor(
     addr: SocketAddr,
     health: Sender<(Component, health::State)>,
     current: watch::Receiver<health::Health>,
+    metrics: PrometheusHandle,
 ) {
     let mut api = OpenApi::default();
 
@@ -90,6 +117,10 @@ pub(super) async fn health_api_actor(
             get_with(serve_health, transform_health)
                 .with_state(current)
                 .layer(middleware::from_fn(super::require_accept_json)),
+        )
+        .api_route(
+            "/metrics",
+            get_with(serve_metrics, transform_metrics).with_state(metrics),
         );
     let router = router.finish_api_with(&mut api, |t| {
         t.title("cov - Health API")
@@ -99,6 +130,7 @@ pub(super) async fn health_api_actor(
     // We pre-calculate the body for the api.json endpoint.
     // This makes it not have to be calculated on every request to render the OpenAPI.
     // It is quite small, so this is not a big deal.
+    let start = std::time::Instant::now();
     let json = match serde_json::to_vec(&api) {
         Ok(json) => json,
         Err(err) => {
@@ -106,6 +138,10 @@ pub(super) async fn health_api_actor(
             return;
         }
     };
+    let end = std::time::Instant::now();
+    gauge!("cov.http.health.openapi", "metric" => "size", "unit" => "bytes").set(json.len() as f64);
+    gauge!("cov.http.health.openapi", "metric" => "serialize", "unit" => "nanos")
+        .set((end - start).as_nanos() as f64);
     let router = router.with_state(OpenApiJson(Bytes::copy_from_slice(&json)));
 
     let listener = match tokio::net::TcpListener::bind(addr).await {

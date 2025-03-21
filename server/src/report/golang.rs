@@ -9,21 +9,21 @@ use winnow::{
 
 /// A Go coverage report.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Report {
+pub struct Report<'a> {
     /// The mode of the counting in the Go report.
     pub mode: Mode,
     /// The code regions of the Go report.
-    pub regions: Vec<LineRegion>,
+    pub regions: Vec<LineRegion<'a>>,
 }
 
-impl Report {
+impl<'a> Report<'a> {
     #[allow(dead_code)] // TODO: remove this
-    pub fn from_str(s: &str) -> Result<Self, ParseError<&str, ContextError>> {
+    pub fn from_str(s: &'a str) -> Result<Self, ParseError<&'a str, ContextError>> {
         parse_report.parse(s.trim())
     }
 }
 
-fn parse_report(s: &mut &str) -> ModalResult<Report> {
+fn parse_report<'a>(s: &mut &'a str) -> ModalResult<Report<'a>> {
     let mode = parse_mode.ctx("mode line").parse_next(s)?;
     let regions = separated(0.., parse_region.ctx("region line"), line_ending).parse_next(s)?;
     Ok(Report { mode, regions })
@@ -56,10 +56,10 @@ fn parse_mode(s: &mut &str) -> ModalResult<Mode> {
 
 /// A line region in the Go report.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct LineRegion {
+pub struct LineRegion<'a> {
     /// The file path this region belongs to.
     /// This is usually a relative path from the root of the project.
-    pub file_path: String,
+    pub file_path: &'a str,
     /// The starting line of the region.
     pub start_line: u32,
     /// The ending line of the region.
@@ -75,12 +75,11 @@ pub struct LineRegion {
     pub executed: u32,
 }
 
-fn parse_region(s: &mut &str) -> ModalResult<LineRegion> {
+fn parse_region<'a>(s: &mut &'a str) -> ModalResult<LineRegion<'a>> {
     // format: "file_path:start_line.start_column,end_line.end_column statements executed"
     let file_path = terminated(take_until(1.., ":"), ":")
         .ctx("file_path")
-        .parse_next(s)?
-        .into();
+        .parse_next(s)?;
     let start_line = terminated(dec_uint, ".").ctx("start_line").parse_next(s)?;
     let start_column = terminated(dec_uint, ",")
         .ctx("start_column")
@@ -116,7 +115,7 @@ github.com/owner/repo/file.go:1.2,3.4 5 6"#;
             Report {
                 mode: Mode::Set,
                 regions: vec![LineRegion {
-                    file_path: "github.com/owner/repo/file.go".into(),
+                    file_path: "github.com/owner/repo/file.go",
                     start_line: 1,
                     start_column: 2,
                     end_line: 3,
@@ -138,7 +137,7 @@ github.com/owner/repo/file.go:1.2,3.4 5 6"#;
             Report {
                 mode: Mode::Count,
                 regions: vec![LineRegion {
-                    file_path: "github.com/owner/repo/file.go".into(),
+                    file_path: "github.com/owner/repo/file.go",
                     start_line: 1,
                     start_column: 2,
                     end_line: 3,
@@ -160,7 +159,7 @@ github.com/owner/repo/file.go:1.2,3.4 5 6"#;
             Report {
                 mode: Mode::Atomic,
                 regions: vec![LineRegion {
-                    file_path: "github.com/owner/repo/file.go".into(),
+                    file_path: "github.com/owner/repo/file.go",
                     start_line: 1,
                     start_column: 2,
                     end_line: 3,
@@ -198,7 +197,7 @@ github.com/owner/repo/file.go:13.14,15.16 17 18";
                 mode: Mode::Atomic,
                 regions: vec![
                     LineRegion {
-                        file_path: "github.com/owner/repo/file.go".into(),
+                        file_path: "github.com/owner/repo/file.go",
                         start_line: 1,
                         start_column: 2,
                         end_line: 3,
@@ -207,7 +206,7 @@ github.com/owner/repo/file.go:13.14,15.16 17 18";
                         executed: 6,
                     },
                     LineRegion {
-                        file_path: "github.com/owner/repo/file.go".into(),
+                        file_path: "github.com/owner/repo/file.go",
                         start_line: 7,
                         start_column: 8,
                         end_line: 9,
@@ -216,7 +215,7 @@ github.com/owner/repo/file.go:13.14,15.16 17 18";
                         executed: 12,
                     },
                     LineRegion {
-                        file_path: "github.com/owner/repo/file.go".into(),
+                        file_path: "github.com/owner/repo/file.go",
                         start_line: 13,
                         start_column: 14,
                         end_line: 15,

@@ -39,7 +39,7 @@ async fn main() -> Result<()> {
         .upkeep_timeout(Duration::from_secs(120))
         .install_recorder()
         .wrap_err("could not prepare Prometheus exporter")?;
-    gauge!("up").set(1);
+    gauge!("cov.up").set(1);
     join_set.spawn(prometheus_upkeep_actor(recorder.clone()));
     info!("metrics backend initialised");
 
@@ -51,6 +51,7 @@ async fn main() -> Result<()> {
         &args.http,
         component_health_tx.clone(),
         health_rx,
+        recorder.clone(),
     );
     info!("health http actor initialised");
 
@@ -84,7 +85,7 @@ async fn prometheus_upkeep_actor(recorder: PrometheusHandle) {
     let mut interval = tokio::time::interval(Duration::from_secs(120));
     loop {
         interval.tick().await;
-        counter!("prometheus_upkeep_ticks").increment(1);
+        counter!("cov.prometheus.upkeep_ticks").increment(1);
         recorder.run_upkeep();
     }
 }

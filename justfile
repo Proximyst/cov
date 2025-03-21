@@ -11,6 +11,10 @@ build:
 test:
     if cargo nextest --version &>/dev/null; then just _fast_test; else just _legacy_test; fi
 
+# Run cov-server.
+serve *ARGS='--logger cov_server=trace,info':
+    cargo run --package cov-server -- {{ARGS}}
+
 _fast_test:
     cargo nextest run
     cargo test --doc

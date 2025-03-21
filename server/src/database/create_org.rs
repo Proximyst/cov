@@ -22,11 +22,11 @@ pub(super) async fn create_organisation(
     reply: oneshot::Sender<Result<(), Error>>,
 ) {
     if reply.is_closed() {
-        counter!("database_command_doa", "command" => "create-organisation").increment(1);
+        counter!("cov.database.actor.command_doa", "command" => "create-organisation").increment(1);
         return;
     }
 
-    counter!("database_command", "command" => "create-organisation").increment(1);
+    counter!("cov.database.command", "command" => "create-organisation").increment(1);
     let _ = reply.send(inner_create_organisation(pools, cmd).await);
 }
 

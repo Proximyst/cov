@@ -62,7 +62,7 @@ pub fn spawn_tracking_actor(
 async fn act(mut rx: mpsc::Receiver<(Component, State)>, tx: watch::Sender<Health>) {
     let mut health = tx.borrow().clone();
     while let Some((component, state)) = rx.recv().await {
-        counter!("health_updates", "component" => component.name()).increment(1);
+        counter!("cov.health.updates", "component" => component.name()).increment(1);
         trace!(?component, ?state, "got component health update");
         health.last_update = Utc::now();
         health
