@@ -1,6 +1,17 @@
-/target
-/run
+/target/
 .DS_Store
+
+web/node_modules/
+web/.pnp/
+web/.pnp.*
+web/.yarn/
+web/coverage/
+web/.next/
+web/out/
+web/build/
+web/*-debug.log*
+web/*.tsbuildinfo
+web/next-env.d.ts
 
 samples/c/.cache/
 samples/c/build/

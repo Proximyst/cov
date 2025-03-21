@@ -1,15 +1,23 @@
-# Format all files in the repository. Assumes cargo is installed. Taplo is optional but recommended.
+# Format all files in the repository. Assumes cargo and yarn are installed. Taplo is optional but recommended.
 fmt:
     taplo --version &>/dev/null && taplo fmt || true
     cargo +nightly fmt
+    cd web && yarn fmt
+
+# Run linters on the project. Assumes cargo and yarn are installed. Taplo is optional but recommended.
+lint:
+    taplo --version &>/dev/null && taplo check || true
+    cargo clippy
+    cd web && yarn lint
 
 # Build the entire project. Assumes cargo is installed.
 build:
     cargo build
 
-# Run all tests. Assumes cargo is installed. cargo-nextest is optional but recommended for faster test suites.
+# Run all tests. Assumes cargo and yarn are installed. cargo-nextest is optional but recommended for faster test suites.
 test:
     if cargo nextest --version &>/dev/null; then just _fast_test; else just _legacy_test; fi
+    cd web && yarn test
 
 # Run cov-server.
 serve *ARGS='--logger cov_server=trace,info':
