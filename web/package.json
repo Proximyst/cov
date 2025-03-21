@@ -8,15 +8,18 @@
     "start": "next start",
     "lint": "oxlint && biome check ./src",
     "fmt": "biome check --write ./src",
-    "test": "jest"
+    "test": "jest",
+    "openapi": "openapi-ts"
   },
   "dependencies": {
+    "@hey-api/client-next": "^0.2.3",
     "next": "15.2.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@hey-api/openapi-ts": "^0.64.13",
     "@swc/core": "^1.11.11",
     "@swc/jest": "^0.2.37",
     "@tailwindcss/postcss": "^4",
