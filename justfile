@@ -20,11 +20,11 @@ test:
     if cargo nextest --version &>/dev/null; then just _fast_test; else just _legacy_test; fi
     cd web && just test
 
-# Run cov-server.
+# Run cov-server with hot reloading. Assumes cargo and cargo-watch are installed.
 serve *ARGS='--logger cov_server=trace,info':
-    cargo run --package cov-server -- {{ARGS}}
+    cargo watch -w server -w proto -- cargo run --package cov-server -- {{ARGS}}
 
-# Run cov-server and frontend server.
+# Run cov-server and frontend server. Assume stdbuf (GNU coreutils), cargo, cargo-watch, and yarn are installed.
 dev *ARGS='--logger cov_server=trace,info':
     #!/bin/bash
     set -eu
