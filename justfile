@@ -24,6 +24,16 @@ test:
 serve *ARGS='--logger cov_server=trace,info':
     cargo run --package cov-server -- {{ARGS}}
 
+# Run cov-server and frontend server.
+dev *ARGS='--logger cov_server=trace,info':
+    #!/bin/bash
+    set -eu
+    if ! stdbuf --version &>/dev/null; then echo 'stdbuf is missing.'; exit 1; fi
+    (stdbuf -oL just serve {{ARGS}} 2>&1 | sed "s/^/$(printf '\033[33mbackend :\033[0m') /") &
+    (cd web && stdbuf -oL just dev  2>&1 | sed "s/^/$(printf '\033[34mfrontend:\033[0m') /") &
+    trap 'kill $(jobs -pr)' SIGINT
+    wait
+
 _fast_test:
     cargo nextest run
     cargo test --doc

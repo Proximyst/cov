@@ -11,7 +11,7 @@
     "lint:write": "oxlint --fix && biome check --write",
     "fmt": "biome format --write",
     "test": "jest",
-    "openapi": "openapi-ts && biome formatter --write"
+    "openapi": "openapi-ts && biome format --write"
   },
   "dependencies": {
     "@hey-api/client-next": "^0.2.3",
