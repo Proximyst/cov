@@ -22,7 +22,7 @@ test:
 
 # Run cov-server with hot reloading. Assumes cargo and cargo-watch are installed.
 serve *ARGS='--logger cov_server=trace,info':
-    cargo watch -w server -w proto -- cargo run --package cov-server -- {{ARGS}}
+    cargo watch -w Cargo.toml -w Cargo.lock -w server -w proto -- cargo run --package cov-server -- {{ARGS}}
 
 # Run cov-server and frontend server. Assume stdbuf (GNU coreutils), cargo, cargo-watch, and yarn are installed.
 dev *ARGS='--logger cov_server=trace,info':
