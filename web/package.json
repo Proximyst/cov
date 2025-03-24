@@ -6,10 +6,12 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "oxlint && biome check ./src",
-    "fmt": "biome check --write ./src",
+    "lint": "oxlint && biome check",
+    "ci": "oxlint && biome ci",
+    "lint:write": "oxlint --fix && biome check --write",
+    "fmt": "biome format --write",
     "test": "jest",
-    "openapi": "openapi-ts"
+    "openapi": "openapi-ts && biome formatter --write"
   },
   "dependencies": {
     "@hey-api/client-next": "^0.2.3",

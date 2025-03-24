@@ -1,3 +1,6 @@
+/.zed/
+/.vscode/
+
 /target/
 .DS_Store
 
@@ -10,6 +13,7 @@ web/.next/
 web/out/
 web/build/
 web/*-debug.log*
+web/openapi-ts-error-*.log
 web/*.tsbuildinfo
 web/next-env.d.ts
 

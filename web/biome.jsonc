@@ -1,0 +1,33 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "formatter": {
+    "indentWidth": 2,
+    "indentStyle": "space",
+    "lineWidth": 120,
+    "formatWithErrors": true
+  },
+  "organizeImports": {
+    "enabled": true
+  },
+  "javascript": {
+    "formatter": {
+      "trailingCommas": "es5"
+    }
+  },
+  "files": {
+    "maxSize": 16777216,
+    "include": ["*.json", "*.jsonc", "*.js", "*.jsx", "*.ts", "*.tsx", "*.mjs"],
+    "ignore": [
+      // Generated
+      ".nx",
+      ".next",
+      "node_modules",
+      "out",
+      "dist",
+      "coverage"
+    ]
+  },
+  "vcs": {
+    "defaultBranch": "main"
+  }
+}

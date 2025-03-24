@@ -2,22 +2,23 @@
 fmt:
     taplo --version &>/dev/null && taplo fmt || true
     cargo +nightly fmt
-    cd web && yarn fmt
+    cd web && just fmt
 
 # Run linters on the project. Assumes cargo and yarn are installed. Taplo is optional but recommended.
 lint:
     taplo --version &>/dev/null && taplo check || true
     cargo clippy
-    cd web && yarn lint
+    cd web && just lint
 
-# Build the entire project. Assumes cargo is installed.
+# Build the entire project. Assumes cargo and yarn are installed.
 build:
     cargo build
+    cd web && just build
 
 # Run all tests. Assumes cargo and yarn are installed. cargo-nextest is optional but recommended for faster test suites.
 test:
     if cargo nextest --version &>/dev/null; then just _fast_test; else just _legacy_test; fi
-    cd web && yarn test
+    cd web && just test
 
 # Run cov-server.
 serve *ARGS='--logger cov_server=trace,info':
@@ -30,13 +31,14 @@ _fast_test:
 _legacy_test:
     cargo test
 
-# Run all tests with code coverage tracking. Assumes cargo and cargo-llvm-cov are installed.
+# Run all tests with code coverage tracking. Assumes cargo, cargo-llvm-cov, and yarn are installed.
 test-cov:
     if test -d target/llvm-cov/; then rm -r target/llvm-cov/; fi
     mkdir -p target/llvm-cov/
     cargo llvm-cov
     cargo llvm-cov report --lcov --doctests --output-path target/llvm-cov/lcov.info
     cargo llvm-cov report --html --doctests
+    cd web && just test-cov
 
 # Run and collect samples. Read individual justfiles for assumptions.
 samples:

@@ -1,0 +1,33 @@
+# Format all files in the repository. Assumes yarn is installed.
+fmt:
+    yarn lint:write
+
+# Run the linters on the project. Assumes yarn is installed.
+lint:
+    yarn lint
+
+# Run all generators. Assumes yarn is installed.
+gen: _gen-openapi
+
+_gen-openapi:
+    yarn openapi
+
+# Run the server in development mode with hot reloading. Assumes yarn is installed.
+dev: gen
+    yarn dev
+
+# Builds the frontend for production. Assumes yarn is installed.
+build:
+    yarn build
+
+# Run the server. Assumes yarn is installed.
+serve:
+    yarn start
+
+# Run all tests. Assumes yarn is installed.
+test:
+    yarn test
+
+# Run all tests with code coverage tracking. Assumes yarn is installed.
+test-cov:
+    yarn test --coverage
