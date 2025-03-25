@@ -2,7 +2,7 @@
 fmt:
     taplo --version &>/dev/null && taplo fmt || true
     cargo +nightly fmt
-    cd web && just fmt
+    cd web && just fmt lint-write
 
 # Run linters on the project. Assumes cargo and yarn are installed. Taplo is optional but recommended.
 lint:
@@ -24,13 +24,17 @@ test:
 serve *ARGS='--logger cov_server=trace,info':
     cargo watch -w Cargo.toml -w Cargo.lock -w server -w proto -- cargo run --package cov-server -- {{ARGS}}
 
+# Run cov-server with hot reloading. Assumes cargo and cargo-watch are installed.
+serve-dev *ARGS='--logger cov_server=trace,info':
+    cargo watch -w Cargo.toml -w Cargo.lock -w server -w proto -- cargo run --package cov-server --features dev -- {{ARGS}}
+
 # Run cov-server and frontend server. Assume stdbuf (GNU coreutils), cargo, cargo-watch, and yarn are installed.
 dev *ARGS='--logger cov_server=trace,info':
     #!/bin/bash
     set -eu
     if ! stdbuf --version &>/dev/null; then echo 'stdbuf is missing.'; exit 1; fi
-    (stdbuf -oL just serve {{ARGS}} 2>&1 | sed "s/^/$(printf '\033[33mbackend :\033[0m') /") &
-    (cd web && stdbuf -oL just dev  2>&1 | sed "s/^/$(printf '\033[34mfrontend:\033[0m') /") &
+    (stdbuf -oL just serve-dev {{ARGS}} 2>&1 | sed "s/^/$(printf '\033[33mbackend :\033[0m') /") &
+    (cd web && stdbuf -oL just dev      2>&1 | sed "s/^/$(printf '\033[34mfrontend:\033[0m') /") &
     trap 'kill $(jobs -pr)' SIGINT
     wait
 

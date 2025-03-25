@@ -2,7 +2,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 /// An error response, accompanied with an error HTTP status code.
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "kebab-case")]
 pub struct Error {
     /// The identifying error code. This can give more information than the HTTP status code.
@@ -12,7 +12,8 @@ pub struct Error {
     pub message: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "kebab-case")]
 pub enum ErrorCode {
     /// The request was unauthorized. This can entail lacking scope, or not having a valid authentication token.
     Unauthorized,
