@@ -1,0 +1,3 @@
+# Run the migrations. Assumes cargo is installed and a Postgres database is up and ready.
+run *ARGS='--logger cov_migrations=trace,info':
+    cargo run -- {{ARGS}}

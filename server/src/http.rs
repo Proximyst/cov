@@ -9,6 +9,7 @@ use axum::{
     middleware::Next,
     response::{IntoResponse, Response},
 };
+use eyre::{Context, Result};
 use metrics_exporter_prometheus::PrometheusHandle;
 use proto::{
     error,
@@ -32,6 +33,11 @@ pub struct HttpArgs {
     /// This is not intended to be public. If you wish to expose it anyhow, you must manually map this with a reverse proxy.
     #[arg(long, env, default_value = "0.0.0.0:8081")]
     health_addr: SocketAddr,
+
+    /// Where to proxy the frontend requests.
+    #[cfg(feature = "dev")]
+    #[arg(long, env, default_value = "localhost:3000")]
+    proxy_addr: String,
 }
 
 async fn serve_404() -> impl IntoResponse {
@@ -90,10 +96,19 @@ pub fn spawn_health_actor(
     ));
 }
 
-pub fn spawn_rest_actor(
+pub async fn spawn_rest_actor(
     set: &mut JoinSet<()>,
     args: &HttpArgs,
     health: Sender<(Component, State)>,
-) {
-    set.spawn(rest::rest_api_actor(args.api_addr, health));
+) -> Result<()> {
+    let actor = rest::rest_api_actor(
+        args.api_addr,
+        #[cfg(feature = "dev")]
+        args.proxy_addr.clone(),
+        health,
+    )
+    .await
+    .wrap_err("failed to create actor")?;
+    set.spawn(actor);
+    Ok(())
 }

@@ -7,8 +7,12 @@ use clap::Parser;
 use eyre::{Context, Result, eyre};
 use metrics::{counter, gauge};
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
-use std::{str::FromStr, time::Duration};
-use tokio::task::JoinSet;
+use proto::health::Health;
+use std::{
+    str::FromStr,
+    time::{Duration, Instant},
+};
+use tokio::{sync::watch, task::JoinSet};
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 
@@ -29,6 +33,9 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let startup = Instant::now();
+    let _ = dotenvy::dotenv().ok();
+
     color_eyre::install()?;
     let args: Args = Args::parse();
     setup_logging(&args.logger).wrap_err("failed to init logging")?;
@@ -44,6 +51,7 @@ async fn main() -> Result<()> {
     info!("metrics backend initialised");
 
     let (component_health_tx, health_rx) = health::spawn_tracking_actor(&mut join_set);
+    tokio::spawn(till_ready(startup, health_rx.clone()));
     info!("health actor initialised");
 
     http::spawn_health_actor(
@@ -55,13 +63,17 @@ async fn main() -> Result<()> {
     );
     info!("health http actor initialised");
 
-    let _db =
-        database::spawn_database_actor(&mut join_set, args.postgres, component_health_tx.clone())
-            .await
-            .wrap_err("failed to start database actor")?;
+    let db = database::start_database(&mut join_set, args.postgres, component_health_tx.clone())
+        .await
+        .wrap_err("failed to start database actor")?;
     info!("database actor initialised");
+    create_admin_user(&db)
+        .await
+        .wrap_err("failed to create default admin user if necessary")?;
 
-    http::spawn_rest_actor(&mut join_set, &args.http, component_health_tx.clone());
+    http::spawn_rest_actor(&mut join_set, &args.http, component_health_tx.clone())
+        .await
+        .wrap_err("failed to spawn rest actor")?;
     info!("rest http actor initialised");
 
     let _ = join_set.join_next().await;
@@ -88,4 +100,40 @@ async fn prometheus_upkeep_actor(recorder: PrometheusHandle) {
         counter!("cov.prometheus.upkeep_ticks").increment(1);
         recorder.run_upkeep();
     }
+}
+
+async fn till_ready(startup: Instant, mut health: watch::Receiver<Health>) {
+    while let Ok(()) = health.changed().await {
+        if health
+            .borrow()
+            .components
+            .values()
+            .any(|s| !matches!(s, proto::health::State::Healthy))
+        {
+            continue;
+        }
+
+        let now = Instant::now();
+        let elapsed = now - startup;
+        gauge!("cov.startup.duration", "unit" => "nanos").set(elapsed.as_nanos() as f64);
+        gauge!("cov.startup.duration", "unit" => "millis").set(elapsed.as_millis() as f64);
+        return;
+    }
+}
+
+async fn create_admin_user(db: &impl database::Db) -> Result<()> {
+    if database::users::has_users(db)
+        .await
+        .wrap_err("failed to check if any users exist")?
+    {
+        // We already have users, so we don't need to create an admin user.
+        return Ok(());
+    }
+
+    let _ = database::users::create_user(db, "admin@localhost", "admin", "admin", b"admin")
+        .await
+        .wrap_err("failed to create 'admin' user")?;
+    info!("created a default admin user with 'admin' password");
+
+    Ok(())
 }

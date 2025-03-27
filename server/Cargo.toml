@@ -10,35 +10,41 @@ publish.workspace = true
 
 [dependencies]
 axum = "0.8"
-clap = { version = "4.5", features = ["derive", "env"] }
-color-eyre = "0.6"
-deadpool-postgres = { version = "0.14", features = ["serde"] }
-eyre = "0.6"
-metrics = "0.24"
+clap.workspace = true
+color-eyre.workspace = true
+eyre.workspace = true
+metrics.workspace = true
 metrics-exporter-prometheus = { version = "0.16", default-features = false }
 proto.path = "../proto"
-serde = { version = "1.0", features = ["derive", "rc"] }
+serde.workspace = true
 serde_json = "1.0"
 chrono.workspace = true
-tokio = { version = "^1.43", features = ["full", "tracing"] }
-tokio-postgres = { version = "0.7", features = [
-  "with-serde_json-1",
-  "with-time-0_3",
-] }
-native-tls = "0.2"
-postgres-native-tls = "0.5"
-tracing = "^0.1"
-tracing-subscriber = { version = "^0.3", features = ["env-filter", "json"] }
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
 aide = { version = "0.14", features = ["axum", "axum-json", "scalar"] }
-refinery = { version = "0.8", features = ["tokio-postgres"] }
-futures = "0.3"
+futures.workspace = true
 uuid = { workspace = true, features = ["fast-rng"] }
-thiserror = "2.0"
+thiserror.workspace = true
 bytes = "1.10"
 winnow = "0.7"
 quick-xml = { version = "0.37", features = ["serde", "serialize"] }
 ahash = "0.8"
 schemars.workspace = true
+axum-proxy = { version = "0.3", features = ["http2", "axum"] }
+include_dir = "0.7"
+axum-login = "0.17"
+secrecy.workspace = true
+dotenvy.workspace = true
+zeroize.workspace = true
+aws-lc-rs.workspace = true
+cov-migrations.path = "../migrations"
+sqlx.workspace = true
+argon2 = { version = "0.5.3", features = ["zeroize", "std"] }
+async-trait = "0.1.88"
 
 [dev-dependencies]
-pretty_assertions = "1.4"
+pretty_assertions.workspace = true
+
+[features]
+dev = []

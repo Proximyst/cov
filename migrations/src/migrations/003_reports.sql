@@ -1,26 +1,7 @@
-CREATE TABLE organisation (
-    id BIGSERIAL NOT NULL PRIMARY KEY,
-    service TEXT NOT NULL,
-    name TEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW ()
-);
-
-CREATE UNIQUE INDEX ON organisation (service, name);
-
-CREATE TABLE repository (
-    id BIGSERIAL NOT NULL PRIMARY KEY,
-    organisation_id BIGINT NOT NULL REFERENCES organisation (id) ON DELETE CASCADE,
-    name TEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW ()
-);
-
-CREATE INDEX ON repository (organisation_id, name);
-
 CREATE TABLE reports (
-    -- the ID is the same as Report.id from the v0 schema.
     id UUID NOT NULL PRIMARY KEY,
     -- the repository that the report is for.
-    repository_id BIGINT NOT NULL REFERENCES repository (id) ON DELETE CASCADE,
+    repository_id UUID NOT NULL REFERENCES repositories (id) ON DELETE CASCADE,
     -- the commit hash of the report.
     commit TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW ()
@@ -38,8 +19,8 @@ CREATE TABLE report_flags (
 );
 
 CREATE TABLE report_files (
-    id BIGSERIAL NOT NULL PRIMARY KEY,
-    repository_id BIGINT NOT NULL REFERENCES repository (id) ON DELETE CASCADE,
+    id UUID NOT NULL PRIMARY KEY,
+    repository_id UUID NOT NULL REFERENCES repositories (id) ON DELETE CASCADE,
     report_id UUID NOT NULL REFERENCES reports (id) ON DELETE CASCADE,
     -- The path to the file in the repository.
     file_path TEXT NOT NULL,
@@ -54,10 +35,10 @@ CREATE TABLE report_files (
 CREATE UNIQUE INDEX ON report_files (repository_id, file_path, report_id);
 
 -- Not all report_files have lines. This is because we clean up old data to keep the database size down.
-CREATE TABLE report_file_line_region (
-    id BIGSERIAL NOT NULL PRIMARY KEY,
-    repository_id BIGINT NOT NULL REFERENCES repository (id) ON DELETE CASCADE,
-    report_file_id BIGINT NOT NULL REFERENCES report_files (id) ON DELETE CASCADE,
+CREATE TABLE report_file_line_regions (
+    id UUID NOT NULL PRIMARY KEY,
+    repository_id UUID NOT NULL REFERENCES repositories (id) ON DELETE CASCADE,
+    report_file_id UUID NOT NULL REFERENCES report_files (id) ON DELETE CASCADE,
     -- lines are 1-indexed, like in an editor.
     start_line INT NOT NULL CHECK (start_line >= 1),
     end_line INT NOT NULL CHECK (end_line >= start_line),
@@ -72,4 +53,4 @@ CREATE TABLE report_file_line_region (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW ()
 );
 
-CREATE INDEX ON report_file_line_region (repository_id, report_file_id);
+CREATE INDEX ON report_file_line_regions (repository_id, report_file_id);
