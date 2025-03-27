@@ -588,6 +588,7 @@ dependencies = [
  "color-eyre",
  "cov-migrations",
  "dotenvy",
+ "either",
  "eyre",
  "futures",
  "include_dir",
@@ -603,6 +604,7 @@ dependencies = [
  "sqlx",
  "thiserror 2.0.12",
  "tokio",
+ "tower-sessions",
  "tracing",
  "tracing-subscriber",
  "uuid",
@@ -1818,7 +1820,10 @@ dependencies = [
 name = "proto"
 version = "0.1.0"
 dependencies = [
+ "aide",
+ "axum",
  "chrono",
+ "either",
  "schemars",
  "serde",
  "uuid",

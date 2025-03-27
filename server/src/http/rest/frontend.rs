@@ -8,6 +8,10 @@ use tracing::trace;
 static FRONTEND_DIR: Dir<'_> = include_dir::include_dir!("$CARGO_MANIFEST_DIR/../web/out");
 
 pub async fn serve_frontend(uri: Uri) -> impl IntoResponse {
+    serve_frontend0(uri)
+}
+
+fn serve_frontend0(uri: Uri) -> impl IntoResponse {
     let span = tracing::debug_span!("serve_frontend", path = uri.path());
     let _span = span.enter();
 

@@ -9,7 +9,8 @@ description.workspace = true
 publish.workspace = true
 
 [dependencies]
-axum = "0.8"
+axum.workspace = true
+either.workspace = true
 clap.workspace = true
 color-eyre.workspace = true
 eyre.workspace = true
@@ -22,7 +23,7 @@ chrono.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
-aide = { version = "0.14", features = ["axum", "axum-json", "scalar"] }
+aide.workspace = true
 futures.workspace = true
 uuid = { workspace = true, features = ["fast-rng"] }
 thiserror.workspace = true
@@ -42,6 +43,7 @@ cov-migrations.path = "../migrations"
 sqlx.workspace = true
 argon2 = { version = "0.5.3", features = ["zeroize", "std"] }
 async-trait = "0.1.88"
+tower-sessions = "0.14.0"
 
 [dev-dependencies]
 pretty_assertions.workspace = true

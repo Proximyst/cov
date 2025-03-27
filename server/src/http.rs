@@ -1,7 +1,7 @@
 mod health;
 mod rest;
 
-use crate::health::Component;
+use crate::{database::Database, health::Component};
 use axum::{
     Json,
     extract::Request,
@@ -100,12 +100,14 @@ pub async fn spawn_rest_actor(
     set: &mut JoinSet<()>,
     args: &HttpArgs,
     health: Sender<(Component, State)>,
+    database: Database,
 ) -> Result<()> {
     let actor = rest::rest_api_actor(
         args.api_addr,
         #[cfg(feature = "dev")]
         args.proxy_addr.clone(),
         health,
+        database,
     )
     .await
     .wrap_err("failed to create actor")?;

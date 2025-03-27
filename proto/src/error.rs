@@ -31,6 +31,9 @@ pub enum ErrorCode {
     /// The resource provided already exists.
     AlreadyExists,
 
+    /// Something happened on the server that cannot be explained. Try again later.
+    InternalError,
+
     /// The client does not know about the error code.
     /// This is never returned by the server.
     #[serde(other)]

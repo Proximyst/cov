@@ -40,3 +40,6 @@ zeroize = { version = "1.8", features = ["derive"] }
 aws-lc-rs = "1.12"
 secrecy = "0.10"
 pretty_assertions = "1.4"
+either = { version = "1.15", features = ["serde"] }
+axum = "0.8"
+aide = { version = "0.14", features = ["axum", "axum-json", "scalar"] }

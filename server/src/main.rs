@@ -71,9 +71,14 @@ async fn main() -> Result<()> {
         .await
         .wrap_err("failed to create default admin user if necessary")?;
 
-    http::spawn_rest_actor(&mut join_set, &args.http, component_health_tx.clone())
-        .await
-        .wrap_err("failed to spawn rest actor")?;
+    http::spawn_rest_actor(
+        &mut join_set,
+        &args.http,
+        component_health_tx.clone(),
+        db.clone(),
+    )
+    .await
+    .wrap_err("failed to spawn rest actor")?;
     info!("rest http actor initialised");
 
     let _ = join_set.join_next().await;

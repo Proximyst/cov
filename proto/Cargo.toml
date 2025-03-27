@@ -13,3 +13,6 @@ schemars.workspace = true
 chrono.workspace = true
 uuid.workspace = true
 serde.workspace = true
+axum.workspace = true
+aide.workspace = true
+either.workspace = true

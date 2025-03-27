@@ -1,19 +1,11 @@
 mod auth;
+mod v0;
+
 #[cfg(not(feature = "dev"))]
 mod frontend;
-mod get_user;
-mod ping;
-mod test;
 
-use crate::health::Component;
-use aide::{
-    axum::{
-        ApiRouter,
-        routing::{get_with, post},
-    },
-    openapi::OpenApi,
-    scalar::Scalar,
-};
+use crate::{database::Database, health::Component};
+use aide::{axum::ApiRouter, openapi::OpenApi, scalar::Scalar};
 use axum::{
     body::Bytes,
     extract::State,
@@ -21,6 +13,10 @@ use axum::{
     middleware,
     response::IntoResponse,
     routing::get,
+};
+use axum_login::{
+    AuthManagerLayerBuilder,
+    tower_sessions::{MemoryStore, SessionManagerLayer},
 };
 use eyre::{Context, Result};
 use metrics::{counter, gauge};
@@ -45,16 +41,11 @@ pub(super) async fn rest_api_actor(
     addr: SocketAddr,
     #[cfg(feature = "dev")] proxy_addr: String,
     health: Sender<(Component, health::State)>,
+    database: Database,
 ) -> Result<impl Future<Output = ()>> {
-    let mut api = OpenApi::default();
-
-    let api_router = ApiRouter::new()
-        .api_route(
-            "/api/ping",
-            get_with(ping::serve_ping, ping::transform_ping),
-        )
-        .fallback(super::serve_404)
-        .layer(middleware::from_fn(super::require_accept_json));
+    let v0 = v0::router(database.clone())
+        .await
+        .wrap_err("failed to create v0 router")?;
 
     #[cfg(feature = "dev")]
     let fallback = axum_proxy::builder_http(proxy_addr)
@@ -63,16 +54,27 @@ pub(super) async fn rest_api_actor(
     #[cfg(not(feature = "dev"))]
     let fallback = get(frontend::serve_frontend);
 
+    let session_store = MemoryStore::default(); // TODO: Make a persistent store
+    let session_layer = SessionManagerLayer::new(session_store)
+        .with_secure(false)
+        .with_expiry(axum_login::tower_sessions::Expiry::OnInactivity(
+            axum_login::tower_sessions::cookie::time::Duration::days(1),
+        ));
+    let backend = auth::Backend::new(database.clone());
+    let auth_layer = AuthManagerLayerBuilder::new(backend, session_layer).build();
+
     let router = ApiRouter::new()
         .route("/api/scalar", Scalar::new("/api/api.json").axum_route())
         .route(
             "/api/api.json",
             get(serve_openapi).layer(middleware::from_fn(super::require_accept_json)),
         )
-        .api_route("/api/test", post(test::serve_test)) // TODO: Remove this
-        .nest_api_service("/v0", api_router)
+        .nest_api_service("/api/v0", v0)
         .route_service("/", fallback.clone())
-        .route_service("/{*path}", fallback);
+        .route_service("/{*path}", fallback)
+        .layer(auth_layer);
+
+    let mut api = OpenApi::default();
     let router = router.finish_api_with(&mut api, |t| {
         t.title("cov - REST API")
             .description("The REST API for cov.")
