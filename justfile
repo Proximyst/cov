@@ -44,6 +44,11 @@ dev *ARGS='--logger cov_server=trace,info':
     trap 'kill $(jobs -pr)' SIGINT
     wait
 
+# Update all dependencies in the repository, except samples.
+update:
+    cargo update
+    cd web && yarn upgrade
+
 _fast_test:
     cargo nextest run
     cargo test --doc
