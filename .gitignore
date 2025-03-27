@@ -1,6 +1,7 @@
 /.zed/
 /.vscode/
 
+.env
 /target/
 .DS_Store
 

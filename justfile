@@ -20,6 +20,12 @@ test:
     if cargo nextest --version &>/dev/null; then just _fast_test; else just _legacy_test; fi
     cd web && just test
 
+# Create and ready a development database. Assumes user-level access to Docker (or an alias to podman) exists.
+dev-db:
+    docker compose down --volumes || true
+    docker compose up -d --wait
+    cd migrations && just run
+
 # Run cov-server with hot reloading. Assumes cargo and cargo-watch are installed.
 serve *ARGS='--logger cov_server=trace,info':
     cargo watch -w Cargo.toml -w Cargo.lock -w server -w proto -- cargo run --package cov-server -- {{ARGS}}

@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use metrics::counter;
+use metrics::{counter, gauge};
 use proto::health::{Health, State};
 use tokio::{
     sync::{mpsc, watch},
@@ -61,6 +61,8 @@ pub fn spawn_tracking_actor(
 
 async fn act(mut rx: mpsc::Receiver<(Component, State)>, tx: watch::Sender<Health>) {
     let mut health = tx.borrow().clone();
+    mark_health(health.clone());
+
     while let Some((component, state)) = rx.recv().await {
         counter!("cov.health.updates", "component" => component.name()).increment(1);
         trace!(?component, ?state, "got component health update");
@@ -72,5 +74,18 @@ async fn act(mut rx: mpsc::Receiver<(Component, State)>, tx: watch::Sender<Healt
             error!("health actor has no receiver anymore. shutting it down");
             break;
         }
+
+        mark_health(health.clone());
     }
+}
+
+fn mark_health(h: Health) {
+    let mut healthy = true;
+    for (comp, state) in h.components {
+        let ok = matches!(state, State::Healthy);
+        healthy = healthy && ok;
+        gauge!("cov.health.component", "component" => comp).set(if ok { 1 } else { 0 });
+    }
+
+    gauge!("cov.health.healthy").set(if healthy { 1 } else { 0 });
 }

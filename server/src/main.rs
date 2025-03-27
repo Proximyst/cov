@@ -34,6 +34,7 @@ struct Args {
 #[tokio::main]
 async fn main() -> Result<()> {
     let startup = Instant::now();
+    let _ = dotenvy::dotenv().ok();
 
     color_eyre::install()?;
     let args: Args = Args::parse();
@@ -62,11 +63,13 @@ async fn main() -> Result<()> {
     );
     info!("health http actor initialised");
 
-    let _db =
-        database::spawn_database_actor(&mut join_set, args.postgres, component_health_tx.clone())
-            .await
-            .wrap_err("failed to start database actor")?;
+    let db = database::start_database(&mut join_set, args.postgres, component_health_tx.clone())
+        .await
+        .wrap_err("failed to start database actor")?;
     info!("database actor initialised");
+    create_admin_user(&db)
+        .await
+        .wrap_err("failed to create default admin user if necessary")?;
 
     http::spawn_rest_actor(&mut join_set, &args.http, component_health_tx.clone())
         .await
@@ -116,4 +119,21 @@ async fn till_ready(startup: Instant, mut health: watch::Receiver<Health>) {
         gauge!("cov.startup.duration", "unit" => "millis").set(elapsed.as_millis() as f64);
         return;
     }
+}
+
+async fn create_admin_user(db: &impl database::Db) -> Result<()> {
+    if database::users::has_users(db)
+        .await
+        .wrap_err("failed to check if any users exist")?
+    {
+        // We already have users, so we don't need to create an admin user.
+        return Ok(());
+    }
+
+    let _ = database::users::create_user(db, "admin@localhost", "admin", "admin", b"admin")
+        .await
+        .wrap_err("failed to create 'admin' user")?;
+    info!("created a default admin user with 'admin' password");
+
+    Ok(())
 }
