@@ -112,7 +112,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up nightly Rust
-        run: rustup default nightly
+        run: rustup default nightly && rustup component add rustfmt
       - name: Check formatting
         run: cargo +nightly fmt --all -- --check
 
