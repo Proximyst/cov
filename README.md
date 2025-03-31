@@ -55,7 +55,7 @@ You are assumed to have the following tools installed:
 - `docker` & `docker compose` (this may be a separate package, depending on the Linux distro)
 - `node` & `yarn`
 - `cargo` (often installed via `rustup`)
-- `cargo-sqlx` (installed via `cargo install cargo-sqlx`)
+- `cargo-sqlx` (installed via `cargo install sqlx-cli`)
 - `taplo` (installed via either `cargo install` or your package manager)
 - `stdbuf` (from GNU coreutils, for parallelising tasks)
 - `cargo-nextest` (optional, for running faster Rust tests)
