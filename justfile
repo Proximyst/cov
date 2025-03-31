@@ -30,7 +30,7 @@ lint:
 # Build the entire project for a production environment.
 build:
     cd web && just build
-    cargo build
+    cargo build --features include-frontend
 
 # Run all tests.
 test:
@@ -60,7 +60,7 @@ dev-db:
 
 # Run cov-server with hot reloading, with proxying to `yarn dev`.
 serve *ARGS='--logger cov_server=trace,info':
-    cargo watch -w Cargo.toml -w Cargo.lock -w server -w proto -- cargo run --package cov-server --features dev -- {{ARGS}}
+    cargo watch -w Cargo.toml -w Cargo.lock -w server -w proto -- cargo run --package cov-server --features proxy-dev -- {{ARGS}}
 
 # Run cov-server and frontend server. Assume stdbuf (GNU coreutils), cargo, cargo-watch, and yarn are installed.
 dev *ARGS='--logger cov_server=trace,info':

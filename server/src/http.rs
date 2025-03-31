@@ -35,7 +35,7 @@ pub struct HttpArgs {
     health_addr: SocketAddr,
 
     /// Where to proxy the frontend requests.
-    #[cfg(feature = "dev")]
+    #[cfg(feature = "proxy-dev")]
     #[arg(long, env, default_value = "localhost:3000")]
     proxy_addr: String,
 }
@@ -104,7 +104,7 @@ pub async fn spawn_rest_actor(
 ) -> Result<()> {
     let actor = rest::rest_api_actor(
         args.api_addr,
-        #[cfg(feature = "dev")]
+        #[cfg(feature = "proxy-dev")]
         args.proxy_addr.clone(),
         health,
         database,

@@ -33,7 +33,7 @@ quick-xml = { version = "0.37", features = ["serde", "serialize"] }
 ahash = "0.8"
 schemars.workspace = true
 axum-proxy = { version = "0.3", features = ["http2", "axum"] }
-include_dir = "0.7"
+include_dir = { version = "0.7", optional = true }
 axum-login = "0.17"
 secrecy.workspace = true
 dotenvy.workspace = true
@@ -49,4 +49,5 @@ tower-sessions = "0.14.0"
 pretty_assertions.workspace = true
 
 [features]
-dev = []
+proxy-dev = []
+include-frontend = ["include_dir"]

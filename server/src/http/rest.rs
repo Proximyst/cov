@@ -1,8 +1,11 @@
 mod auth;
 mod v0;
 
-#[cfg(not(feature = "dev"))]
+#[cfg(feature = "include-frontend")]
 mod frontend;
+
+#[cfg(all(feature = "include-frontend", feature = "proxy-dev"))]
+compile_error!("cannot build with both `include-frontend` and `proxy-dev` features");
 
 use crate::{database::Database, health::Component};
 use aide::{axum::ApiRouter, openapi::OpenApi, scalar::Scalar};
@@ -39,7 +42,7 @@ async fn serve_openapi(State(api): State<OpenApiJson>) -> impl IntoResponse {
 
 pub(super) async fn rest_api_actor(
     addr: SocketAddr,
-    #[cfg(feature = "dev")] proxy_addr: String,
+    #[cfg(feature = "proxy-dev")] proxy_addr: String,
     health: Sender<(Component, health::State)>,
     database: Database,
 ) -> Result<impl Future<Output = ()>> {
@@ -47,11 +50,11 @@ pub(super) async fn rest_api_actor(
         .await
         .wrap_err("failed to create v0 router")?;
 
-    #[cfg(feature = "dev")]
+    #[cfg(feature = "proxy-dev")]
     let fallback = axum_proxy::builder_http(proxy_addr)
         .wrap_err("failed to create http proxy")?
         .build(axum_proxy::rewrite::Identity);
-    #[cfg(not(feature = "dev"))]
+    #[cfg(feature = "include-frontend")]
     let fallback = get(frontend::serve_frontend);
 
     let session_store = MemoryStore::default(); // TODO: Make a persistent store
@@ -69,10 +72,12 @@ pub(super) async fn rest_api_actor(
             "/api/api.json",
             get(serve_openapi).layer(middleware::from_fn(super::require_accept_json)),
         )
-        .nest_api_service("/api/v0", v0)
+        .nest_api_service("/api/v0", v0);
+    #[cfg(any(feature = "include-frontend", feature = "proxy-dev"))]
+    let router = router
         .route_service("/", fallback.clone())
-        .route_service("/{*path}", fallback)
-        .layer(auth_layer);
+        .route_service("/{*path}", fallback);
+    let router = router.layer(auth_layer);
 
     let mut api = OpenApi::default();
     let router = router.finish_api_with(&mut api, |t| {
