@@ -95,7 +95,7 @@ jobs:
             target
           key: cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Set up Rust
-        run: rustup default "${{ matrix.rust-version }}"
+        run: rustup default stable
       - name: Install cargo-sqlx
         uses: baptiste0928/cargo-install@v3
         with:
