@@ -27,3 +27,7 @@ jobs:
         run: rustup default stable
       - name: Build release binary
         run: cargo build --release
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: true
