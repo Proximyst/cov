@@ -24,6 +24,7 @@ export function Header() {
   const [selectedOrg, setSelectedOrg] = useState("todo"); // TODO: Use a context for this to propagate throughout the app
   const isAdmin = true; // TODO: Propagate this somehow
 
+  // TODO: Transform header to hamburger menu if screen is too small
   return (
     <div className="min-h-auto container mx-auto px-4 md:px-6 lg:px-8">
       <header className="flex justify-between h-20 w-full shrink-0 items-center px-4 md:px-6">
