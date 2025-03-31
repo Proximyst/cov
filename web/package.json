@@ -14,7 +14,7 @@
     "openapi": "openapi-ts && biome format --write"
   },
   "dependencies": {
-    "@hey-api/client-next": "^0.2.3",
+    "@hey-api/client-next": "^0.3.0",
     "@radix-ui/react-dropdown-menu": "^2.1.6",
     "@radix-ui/react-select": "^2.1.6",
     "@radix-ui/react-separator": "^1.1.2",
