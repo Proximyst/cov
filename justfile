@@ -4,11 +4,16 @@ fmt:
     cargo +nightly fmt
     cd web && just fmt lint-write
 
-# Run linters on the project. Assumes cargo and yarn are installed. Taplo is optional but recommended.
+# Prepare SQLx query metadata. Assumes cargo-sqlx is installed.
+prepare:
+    cargo sqlx prepare --workspace
+
+# Run linters on the project. Assumes cargo, cargo-sqlx, and yarn are installed. Taplo is optional but recommended.
 lint:
     if taplo --version &>/dev/null; then taplo check; fi
     cargo fmt --check
     cargo clippy
+    cargo sqlx prepare --workspace --check
     cd web && just lint
 
 # Build the entire project. Assumes cargo and yarn are installed.

@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT password AS \"access_token!\" FROM users WHERE id = $1\n        UNION\n        SELECT access_token FROM user_tokens WHERE user_id = $1 AND expiry > NOW()",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "access_token!",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "b3e90b7d5bed08de2e28d1285c11af08a29d430d5ce721a36f191cb9a35573df"
+}

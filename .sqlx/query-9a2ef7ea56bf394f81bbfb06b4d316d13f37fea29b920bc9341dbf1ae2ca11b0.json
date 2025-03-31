@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM user_oauth2 WHERE expiry <= $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "9a2ef7ea56bf394f81bbfb06b4d316d13f37fea29b920bc9341dbf1ae2ca11b0"
+}
