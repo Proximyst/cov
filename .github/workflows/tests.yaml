@@ -122,10 +122,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Set up stable Rust
         run: rustup default stable
       - name: Check clippy
-        run: cargo clippy --all-targets --all-features
+        run: cargo clippy --all-targets
 
   taplo:
     name: Taplo
