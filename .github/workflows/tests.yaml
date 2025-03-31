@@ -38,9 +38,6 @@ jobs:
           --health-interval 10s
           --health-timeout 3s
           --health-retries 5
-    env:
-      DATABASE_URL: postgres://cov:cov@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/cov
-      POSTGRES: postgres://cov:cov@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/cov
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -56,11 +53,20 @@ jobs:
         run: rustup default "${{ matrix.rust-version }}"
       - name: Run migrations
         run: cd migrations && cargo run --release
+        env:
+          DATABASE_URL: postgres://cov:cov@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/cov
+          POSTGRES: postgres://cov:cov@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/cov
       - uses: taiki-e/install-action@nextest
       - name: Run primary test suite
         run: cargo nextest run
+        env:
+          DATABASE_URL: postgres://cov:cov@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/cov
+          POSTGRES: postgres://cov:cov@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/cov
       - name: Run doctests
         run: cargo test --doc
+        env:
+          DATABASE_URL: postgres://cov:cov@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/cov
+          POSTGRES: postgres://cov:cov@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/cov
 
   sqlx-prepare:
     name: SQLx prepare
@@ -82,9 +88,6 @@ jobs:
           --health-interval 10s
           --health-timeout 3s
           --health-retries 5
-    env:
-      DATABASE_URL: postgres://cov:cov@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/cov
-      POSTGRES: postgres://cov:cov@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/cov
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -104,8 +107,14 @@ jobs:
           crate: sqlx-cli
       - name: Run migrations
         run: cd migrations && cargo run --release
+        env:
+          DATABASE_URL: postgres://cov:cov@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/cov
+          POSTGRES: postgres://cov:cov@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/cov
       - name: Check SQLx prepare
         run: cargo sqlx prepare --workspace --check
+        env:
+          DATABASE_URL: postgres://cov:cov@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/cov
+          POSTGRES: postgres://cov:cov@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/cov
 
   fmt-rust:
     name: Rust formatting check
