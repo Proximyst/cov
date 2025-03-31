@@ -56,7 +56,7 @@ jobs:
         run: rustup default "${{ matrix.rust-version }}"
       - uses: taiki-e/install-action@nextest
       - name: Run primary test suite
-        run: cargo nextest
+        run: cargo nextest run
       - name: Run doctests
         run: cargo test --doc
 
