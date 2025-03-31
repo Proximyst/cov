@@ -99,6 +99,8 @@ jobs:
         uses: baptiste0928/cargo-install@v3
         with:
           crate: cargo-sqlx
+      - name: Run migrations
+        run: cd migrations && cargo run --release
       - name: Check SQLx prepare
         run: cargo sqlx prepare --workspace --check
 
