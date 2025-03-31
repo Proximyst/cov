@@ -56,9 +56,9 @@ jobs:
         run: rustup default "${{ matrix.rust-version }}"
       - uses: taiki-e/install-action@nextest
       - name: Run primary test suite
-        run: cargo nextest run --features dev
+        run: cargo nextest run
       - name: Run doctests
-        run: cargo test --doc --features dev
+        run: cargo test --doc
 
   sqlx-prepare:
     name: SQLx prepare
