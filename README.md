@@ -52,6 +52,8 @@ There are more recipes in the justfile: run `just -l` to see them and their assu
 
 If you need samples to test with, you can run `just samples` to generate some sample data. If you have GNU coreutils installed, this will be parallelised.
 
+The main branch is used as a [trunk-based development branch](https://trunkbaseddevelopment.com/).
+
 ## Licence
 
 `cov` is licensed under the MIT licence. See the [LICENCE](LICENCE) file for more information.

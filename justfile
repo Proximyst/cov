@@ -6,7 +6,8 @@ fmt:
 
 # Run linters on the project. Assumes cargo and yarn are installed. Taplo is optional but recommended.
 lint:
-    taplo --version &>/dev/null && taplo check || true
+    if taplo --version &>/dev/null; then taplo check; fi
+    cargo fmt --check
     cargo clippy
     cd web && just lint
 
@@ -64,6 +65,14 @@ test-cov:
     cargo llvm-cov report --lcov --doctests --output-path target/llvm-cov/lcov.info
     cargo llvm-cov report --html --doctests
     cd web && just test-cov
+
+# Set up a precommit hook to ensure all code is formatted and tests passing before committing.
+setup-precommit:
+    cp assets/pre-commit.sh .git/hooks/pre-commit
+    chmod +x .git/hooks/pre-commit
+
+_precommit:
+    just lint test
 
 # Run and collect samples. Read individual justfiles for assumptions.
 samples:

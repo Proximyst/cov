@@ -9,11 +9,7 @@ import { useState } from "react";
 function Pages() {
   const [currentPage, setPage] = useState(0);
   const btn = (i: number, txt: string) => (
-    <Button
-      variant={currentPage == i ? "secondary" : "ghost"}
-      className="text-base"
-      onClick={() => setPage(i)}
-    >
+    <Button variant={currentPage === i ? "secondary" : "ghost"} className="text-base" onClick={() => setPage(i)}>
       {txt}
     </Button>
   );
@@ -52,6 +48,7 @@ export default function Repositories() {
         <Separator className="shrink w-auto" />
         <div className="grow flex flex-row flex-wrap gap-4 min-w-full content-center">
           {new Array(50).fill(0).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: this is temporary
             <RepositoryCard key={i} />
           ))}
         </div>

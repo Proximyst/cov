@@ -9,13 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 export function Header() {
   // This is set up such that the top of the screen has:
@@ -29,15 +23,8 @@ export function Header() {
     <div className="min-h-auto container mx-auto px-4 md:px-6 lg:px-8">
       <header className="flex justify-between h-20 w-full shrink-0 items-center px-4 md:px-6">
         <div className="flex items-center gap-4">
-          <img
-            src="/orgimg.png"
-            alt="Organization logo"
-            className="h-12 rounded-2xl"
-          />
-          <Select
-            value={selectedOrg}
-            onValueChange={(value) => setSelectedOrg(value)}
-          >
+          <img src="/orgimg.png" alt="Organization logo" className="h-12 rounded-2xl" />
+          <Select value={selectedOrg} onValueChange={(value) => setSelectedOrg(value)}>
             <SelectTrigger className="w-64">
               <SelectValue placeholder="TODO" />
             </SelectTrigger>
@@ -59,11 +46,7 @@ export function Header() {
           </DropdownMenu>
           <DropdownMenu>
             <DropdownMenuTrigger>
-              <img
-                src="/userimg.jpeg"
-                alt="User profile"
-                className="h-12 rounded-2xl hover:outline-1"
-              />
+              <img src="/userimg.jpeg" alt="User profile" className="h-12 rounded-2xl hover:outline-1" />
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-24">
               <DropdownMenuItem>Profile</DropdownMenuItem>
