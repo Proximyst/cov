@@ -35,3 +35,8 @@ test:
 # Run all tests with code coverage tracking. Assumes yarn is installed.
 test-cov:
     yarn test --coverage
+
+# Update all dependencies.
+update:
+    yarn upgrade
+    yarn install

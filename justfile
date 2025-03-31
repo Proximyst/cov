@@ -47,7 +47,7 @@ dev *ARGS='--logger cov_server=trace,info':
 # Update all dependencies in the repository, except samples.
 update:
     cargo update
-    cd web && yarn upgrade
+    cd web && just update
 
 _fast_test:
     cargo nextest run
