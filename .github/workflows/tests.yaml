@@ -1,5 +1,6 @@
 name: Run tests and lints
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
