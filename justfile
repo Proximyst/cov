@@ -1,64 +1,44 @@
-# Format all files in the repository. Assumes cargo and yarn are installed. Taplo is optional but recommended.
-fmt:
-    taplo --version &>/dev/null && taplo fmt || true
-    cargo +nightly fmt
-    cd web && just fmt lint-write
+# The Justfile is formatted into sections:
+#   1. Active dev tooling: stuff you'll use when working.
+#   2. Passive dev tooling: stuff you'll use indirectly, e.g. via precommit hooks.
+#   3. CI/CD tooling
+#   4. Samples
 
-# Prepare SQLx query metadata. Assumes cargo-sqlx is installed.
+# SECTION: Active dev tooling
+
+# Format all files in the repository.
+fmt:
+    #!/bin/bash
+    set -euo pipefail
+    (stdbuf -oL taplo fmt 2>&1                             | sed "s/^/$(printf '\033[33mtaplo    :\033[0m') /") &
+    (stdbuf -oL cargo +nightly fmt 2>&1                    | sed "s/^/$(printf '\033[34mcargo fmt:\033[0m') /") &
+    (stdbuf -oL sh -c 'cd web && just fmt lint-write' 2>&1 | sed "s/^/$(printf '\033[35mweb fmt  :\033[0m') /") &
+    wait
+
+# Prepare SQLx query metadata.
 prepare:
     cargo sqlx prepare --workspace
 
-# Run linters on the project. Assumes cargo, cargo-sqlx, and yarn are installed. Taplo is optional but recommended.
+# Run linters on the project.
 lint:
-    if taplo --version &>/dev/null; then taplo check; fi
+    taplo check
     cargo fmt --check
     cargo clippy
     cargo sqlx prepare --workspace --check
     cd web && just lint
 
-# Build the entire project. Assumes cargo and yarn are installed.
+# Build the entire project for a production environment.
 build:
-    cargo build
     cd web && just build
+    cargo build
 
-# Run all tests. Assumes cargo and yarn are installed. cargo-nextest is optional but recommended for faster test suites.
+# Run all tests.
 test:
     if cargo nextest --version &>/dev/null; then just _fast_test; else just _legacy_test; fi
     cd web && just test
-
-# Create and ready a development database. Assumes user-level access to Docker (or an alias to podman) exists.
-dev-db:
-    docker compose down --volumes || true
-    docker compose up -d --wait
-    cd migrations && just run
-
-# Run cov-server with hot reloading. Assumes cargo and cargo-watch are installed.
-serve *ARGS='--logger cov_server=trace,info':
-    cargo watch -w Cargo.toml -w Cargo.lock -w server -w proto -- cargo run --package cov-server -- {{ARGS}}
-
-# Run cov-server with hot reloading. Assumes cargo and cargo-watch are installed.
-serve-dev *ARGS='--logger cov_server=trace,info':
-    cargo watch -w Cargo.toml -w Cargo.lock -w server -w proto -- cargo run --package cov-server --features dev -- {{ARGS}}
-
-# Run cov-server and frontend server. Assume stdbuf (GNU coreutils), cargo, cargo-watch, and yarn are installed.
-dev *ARGS='--logger cov_server=trace,info':
-    #!/bin/bash
-    set -eu
-    if ! stdbuf --version &>/dev/null; then echo 'stdbuf is missing.'; exit 1; fi
-    (stdbuf -oL just serve-dev {{ARGS}} 2>&1 | sed "s/^/$(printf '\033[33mbackend :\033[0m') /") &
-    (cd web && stdbuf -oL just dev      2>&1 | sed "s/^/$(printf '\033[34mfrontend:\033[0m') /") &
-    trap 'kill $(jobs -pr)' SIGINT
-    wait
-
-# Update all dependencies in the repository, except samples.
-update:
-    cargo update
-    cd web && just update
-
 _fast_test:
     cargo nextest run
     cargo test --doc
-
 _legacy_test:
     cargo test
 
@@ -69,15 +49,46 @@ test-cov:
     cargo llvm-cov
     cargo llvm-cov report --lcov --doctests --output-path target/llvm-cov/lcov.info
     cargo llvm-cov report --html --doctests
+    if test -d web/coverage/; then rm -r web/coverage/; fi
     cd web && just test-cov
+
+# Create and ready a development database. Assumes user-level access to Docker (or an alias to podman) exists.
+dev-db:
+    docker compose down --volumes || true
+    docker compose up -d --wait
+    cd migrations && just run
+
+# Run cov-server with hot reloading, with proxying to `yarn dev`.
+serve *ARGS='--logger cov_server=trace,info':
+    cargo watch -w Cargo.toml -w Cargo.lock -w server -w proto -- cargo run --package cov-server --features dev -- {{ARGS}}
+
+# Run cov-server and frontend server. Assume stdbuf (GNU coreutils), cargo, cargo-watch, and yarn are installed.
+dev *ARGS='--logger cov_server=trace,info':
+    #!/bin/bash
+    set -euo pipefail
+    if ! stdbuf --version &>/dev/null; then echo 'stdbuf is missing.'; exit 1; fi
+    (stdbuf -oL just serve {{ARGS}} 2>&1 | sed "s/^/$(printf '\033[33mbackend :\033[0m') /") &
+    (cd web && stdbuf -oL just dev 2>&1  | sed "s/^/$(printf '\033[34mfrontend:\033[0m') /") &
+    trap 'kill $(jobs -pr)' SIGINT
+    wait
+
+# Update all dependencies in the repository, except samples.
+update:
+    cargo update
+    cd web && just update
+
+# SECTION: Passive dev tooling
 
 # Set up a precommit hook to ensure all code is formatted and tests passing before committing.
 setup-precommit:
     cp assets/pre-commit.sh .git/hooks/pre-commit
     chmod +x .git/hooks/pre-commit
-
 _precommit:
     just lint test
+
+# SECTION: CI/CD tooling
+
+# SECTION: Samples
 
 # Run and collect samples. Read individual justfiles for assumptions.
 samples:

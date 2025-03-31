@@ -45,12 +45,25 @@ The server does not support Unix sockets, only HTTP over TCP/IP.
 
 ## Development
 
-The backend is written in Rust, and the frontend is written in TypeScript.
+The backend is written in Rust, and the frontend is written in TypeScript. Everything you need should be doable with [`just`](https://just.systems).
 
-To build the platform, use Just: `just build`. This will build the backend and frontend.
-There are more recipes in the justfile: run `just -l` to see them and their assumed dependencies.
+Some directories have inner `justfile`s with more recipes than are exposed in the outermost file. The outermost file should be all you need for day-to-day development.
 
-If you need samples to test with, you can run `just samples` to generate some sample data. If you have GNU coreutils installed, this will be parallelised.
+You are assumed to have the following tools installed:
+
+- `just`
+- `docker` & `docker compose` (this may be a separate package, depending on the Linux distro)
+- `node` & `yarn`
+- `cargo` (often installed via `rustup`)
+- `cargo-sqlx` (installed via `cargo install cargo-sqlx`)
+- `taplo` (installed via either `cargo install` or your package manager)
+- `stdbuf` (from GNU coreutils, for parallelising tasks)
+- `cargo-nextest` (optional, for running faster Rust tests)
+- `cargo-watch` (required only for `dev` recipes)
+- `cargo-llvm-cov` (required only for `test-cov`)
+- Some C compiler, some C++ compiler, Go, and Java (required only for `samples`)
+
+The available recipes can be seen via `just -l`.
 
 The main branch is used as a [trunk-based development branch](https://trunkbaseddevelopment.com/).
 
