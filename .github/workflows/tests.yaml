@@ -29,6 +29,8 @@ jobs:
           POSTGRES_PASSWORD: "cov"
           POSTGRES_DB: "cov"
           PGUSER: "cov"
+          PGDATABASE: "cov"
+        ports: ["5432"]
         options: >-
           --health-cmd 'pg_isready'
           --health-start-period 0s
@@ -37,10 +39,8 @@ jobs:
           --health-timeout 3s
           --health-retries 5
     env:
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      DATABASE_URL: postgres://cov:cov@postgres/cov
-      POSTGRES: postgres://cov:cov@postgres/cov
+      DATABASE_URL: postgres://cov:cov@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/cov
+      POSTGRES: postgres://cov:cov@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/cov
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -54,6 +54,8 @@ jobs:
           key: cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Set up Rust
         run: rustup default "${{ matrix.rust-version }}"
+      - name: Run migrations
+        run: cd migrations && cargo run --release
       - uses: taiki-e/install-action@nextest
       - name: Run primary test suite
         run: cargo nextest run
@@ -71,6 +73,8 @@ jobs:
           POSTGRES_PASSWORD: "cov"
           POSTGRES_DB: "cov"
           PGUSER: "cov"
+          PGDATABASE: "cov"
+        ports: ["5432"]
         options: >-
           --health-cmd 'pg_isready'
           --health-start-period 0s
@@ -79,10 +83,8 @@ jobs:
           --health-timeout 3s
           --health-retries 5
     env:
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      DATABASE_URL: postgres://cov:cov@postgres/cov
-      POSTGRES: postgres://cov:cov@postgres/cov
+      DATABASE_URL: postgres://cov:cov@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/cov
+      POSTGRES: postgres://cov:cov@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/cov
     steps:
       - name: Checkout
         uses: actions/checkout@v4
