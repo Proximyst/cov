@@ -14,13 +14,32 @@ env:
   RUSTFLAGS: "-Dwarnings"
 
 jobs:
-  test:
+  rust-test:
     name: Rust tests
     strategy:
       matrix:
         rust-version: [stable, 1.85]
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: "cov"
+          POSTGRES_PASSWORD: "cov"
+          POSTGRES_DB: "cov"
+          PGUSER: "cov"
+        options: >-
+          --health-cmd 'pg_isready -d cov'
+          --health-start-period 0s
+          --health-start-interval 1s
+          --health-interval 10s
+          --health-timeout 3s
+          --health-retries 5
+    env:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      DATABASE_URL: postgres://cov:cov@postgres:5432/cov
+      POSTGRES: postgres://cov:cov@postgres:5432/cov
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -31,26 +50,72 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Set up Rust
         run: rustup default "${{ matrix.rust-version }}"
-      - name: Run tests
-        run: cargo test --all --all-features --no-default-features
+      - uses: taiki-e/install-action@nextest
+      - name: Run primary test suite
+        run: cargo nextest
+      - name: Run doctests
+        run: cargo test --doc
 
-  fmt-rust:
+  sqlx-prepare:
+    name: SQLx prepare
     runs-on: ubuntu-latest
-    name: Rust formatting check
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: "cov"
+          POSTGRES_PASSWORD: "cov"
+          POSTGRES_DB: "cov"
+          PGUSER: "cov"
+        options: >-
+          --health-cmd 'pg_isready -d cov'
+          --health-start-period 0s
+          --health-start-interval 1s
+          --health-interval 10s
+          --health-timeout 3s
+          --health-retries 5
+    env:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      DATABASE_URL: postgres://cov:cov@postgres:5432/cov
+      POSTGRES: postgres://cov:cov@postgres:5432/cov
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set up stable Rust
-        run: rustup default stable
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Set up Rust
+        run: rustup default "${{ matrix.rust-version }}"
+      - name: Install cargo-sqlx
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: cargo-sqlx
+      - name: Check SQLx prepare
+        run: cargo sqlx prepare --workspace --check
+
+  fmt-rust:
+    name: Rust formatting check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up nightly Rust
+        run: rustup default nightly
       - name: Check formatting
-        run: cargo fmt --all -- --check
+        run: cargo +nightly fmt --all -- --check
 
   clippy:
-    runs-on: ubuntu-latest
     name: Rust clippy
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -58,3 +123,14 @@ jobs:
         run: rustup default stable
       - name: Check clippy
         run: cargo clippy --all-targets --all-features
+
+  taplo:
+    name: Taplo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Taplo
+        uses: uncenter/setup-taplo@v1.0.8
+      - name: Taplo check
+        run: taplo check
