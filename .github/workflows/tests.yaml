@@ -30,7 +30,7 @@ jobs:
           POSTGRES_DB: "cov"
           PGUSER: "cov"
         options: >-
-          --health-cmd 'pg_isready -d cov'
+          --health-cmd 'pg_isready'
           --health-start-period 0s
           --health-start-interval 1s
           --health-interval 10s
@@ -72,7 +72,7 @@ jobs:
           POSTGRES_DB: "cov"
           PGUSER: "cov"
         options: >-
-          --health-cmd 'pg_isready -d cov'
+          --health-cmd 'pg_isready'
           --health-start-period 0s
           --health-start-interval 1s
           --health-interval 10s
