@@ -191,7 +191,7 @@ impl<'a> TryFrom<lcov::Report<'a>> for Report {
                     ),
                     // Lcov doesn't have a concept of statements per line, so we're using this as a boolean flag.
                     statements: 1,
-                    executions: (line.execution_count > 0).then_some(1).unwrap_or(0),
+                    executions: if line.execution_count > 0 { 1 } else { 0 },
                 });
             }
         }

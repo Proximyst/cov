@@ -90,14 +90,14 @@ async fn apply_ca_cert(
         opts = opts.ssl_mode(PgSslMode::VerifyCa);
     }
 
-    if path.ends_with(".pem") {
+    if path.extension().is_some_and(|ext| ext == "pem") {
         let pem = tokio::fs::read(path)
             .await
             .wrap_err("failed to read PEM file")?;
 
         opts = opts.ssl_root_cert_from_pem(pem);
     } else {
-        opts = opts.ssl_root_cert(&path);
+        opts = opts.ssl_root_cert(path);
     }
 
     Ok(opts)

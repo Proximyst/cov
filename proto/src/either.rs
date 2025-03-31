@@ -53,9 +53,9 @@ impl<L, R> From<Either<L, R>> for AxumEither<L, R> {
     }
 }
 
-impl<L, R> Into<Either<L, R>> for AxumEither<L, R> {
-    fn into(self) -> Either<L, R> {
-        match self {
+impl<L, R> From<AxumEither<L, R>> for Either<L, R> {
+    fn from(axum_either: AxumEither<L, R>) -> Self {
+        match axum_either {
             AxumEither::Left(l) => Either::Left(l),
             AxumEither::Right(r) => Either::Right(r),
         }

@@ -121,7 +121,7 @@ pub async fn verify_user_password(
         .await?;
 
     let password = password.into();
-    Ok(spawn_blocking(move || {
+    spawn_blocking(move || {
         PasswordHash::new(&row.password)
             .map_err(Error::from)
             .and_then(|hash| {
@@ -131,7 +131,7 @@ pub async fn verify_user_password(
                     .or(Ok(false))
             })
     })
-    .await??)
+    .await?
 }
 
 /// Checks if the password is valid for the user.

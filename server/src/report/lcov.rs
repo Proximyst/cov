@@ -303,7 +303,7 @@ enum InputLine<'a> {
     FunctionsHit(u32),
     LineData(DA<'a>),
     Mcdc(RawMCDC<'a>),
-    Branch(BRDA<'a>),
+    Branch(Brda<'a>),
     ModernFunctionLeader(ModernFunctionLeader),
     ModernFunctionAlias(ModernFunctionAlias<'a>),
     LegacyFunctionLeader(LegacyFunctionLeader<'a>),
@@ -470,7 +470,7 @@ fn parse_mcdc<'s>(s: &mut &'s str) -> ModalResult<RawMCDC<'s>> {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-struct BRDA<'a> {
+struct Brda<'a> {
     line_number: u32,
     exception: bool,
     block: u32,
@@ -478,7 +478,7 @@ struct BRDA<'a> {
     taken: u32,
 }
 
-fn parse_brda<'s>(s: &mut &'s str) -> ModalResult<BRDA<'s>> {
+fn parse_brda<'s>(s: &mut &'s str) -> ModalResult<Brda<'s>> {
     "BRDA:".parse_next(s)?;
     let line_number = terminated(dec_uint, ",").ctx("line_number").parse_next(s)?;
     let exception = opt("e")
@@ -490,7 +490,7 @@ fn parse_brda<'s>(s: &mut &'s str) -> ModalResult<BRDA<'s>> {
     ','.parse_next(s)?;
     let taken = alt((dec_uint, '-'.map(|_| 0))).ctx("taken").parse_next(s)?;
 
-    Ok(BRDA {
+    Ok(Brda {
         line_number,
         exception,
         block,
@@ -754,7 +754,7 @@ mod tests {
         let mut input = "BRDA:1,2,branch,3";
         assert_eq!(
             parse_input_line(&mut input),
-            Ok(InputLine::Branch(BRDA {
+            Ok(InputLine::Branch(Brda {
                 line_number: 1,
                 exception: false,
                 block: 2,
@@ -766,7 +766,7 @@ mod tests {
         let mut input = "BRDA:1,e2,branch,-";
         assert_eq!(
             parse_input_line(&mut input),
-            Ok(InputLine::Branch(BRDA {
+            Ok(InputLine::Branch(Brda {
                 line_number: 1,
                 exception: true,
                 block: 2,

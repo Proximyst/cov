@@ -44,17 +44,14 @@ fn not_found() -> (StatusCode, [(HeaderName, &'static str); 1], &'static [u8]) {
     )
 }
 
-fn read_file<'a>(path: &'a str) -> Option<(&'static str, &'static File<'static>)> {
+fn read_file(path: &str) -> Option<(&'static str, &'static File<'static>)> {
     let path = match path.trim_start_matches('/') {
         "" => "index.html",
         path if !path.contains('.') => &format!("{}/{path}.html", path.trim_end_matches('/')),
         path => path,
     };
 
-    let file = match FRONTEND_DIR.get_file(path) {
-        Some(file) => file,
-        None => return None,
-    };
+    let file = FRONTEND_DIR.get_file(path)?;
 
     let content_type = match file.path().extension().and_then(|ext| ext.to_str()) {
         Some("html") => "text/html; charset=utf-8",
