@@ -4,5 +4,9 @@
   "prHourlyLimit": 0,
   "automerge": true,
   "automergeStrategy": "squash",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true
+  },
   "pruneBranchAfterAutomerge": true
 }
