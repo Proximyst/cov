@@ -43,7 +43,7 @@ jobs:
       - name: Set up dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3 ninja-build meson gcc lcov gcovr
+          sudo apt-get install -y python3 ninja-build meson gcc lcov gcovr strace
 
       - name: Meson build and test
         run: |
@@ -56,7 +56,7 @@ jobs:
         run: |
           set -xeuo pipefail
           cd "$DIR"
-          ninja -v coverage -C build # writes to build/meson-logs/coverage.{xml,info}
+          strace -fe trace=process ninja -v coverage -C build # writes to build/meson-logs/coverage.{xml,info}
 
       - name: Ensure coverage reports exist
         run: |
