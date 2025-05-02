@@ -3,6 +3,7 @@ lint:
     zizmor .
     actionlint
     goimports -w .
+    go mod tidy
 
 # Run all tests.
 test:
@@ -11,6 +12,14 @@ test:
 # Run all tests, always. This skips the test cache.
 test-all:
     go test -count=1 ./...
+
+# Build the binary. This produces a production-ready result.
+build:
+    go build -o ./cov
+
+# Run the binary.
+run *ARGS: build
+    ./cov {{ARGS}}
 
 # Set up a Git pre-commit hook to run (fast) linters before committing.
 # This is a one-time setup step.
