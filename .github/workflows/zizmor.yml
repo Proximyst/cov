@@ -34,7 +34,6 @@ jobs:
           # Enable caching ONLY for PRs within the main repo. Forks do not get cache.
           # uvx will still use a cache within the job, so we don't download Zizmor multiple times.
           enable-cache: ${{ github.repository == github.event.pull_request.head.repo.full_name }}
-          path: actionlint
 
       - name: Generate SARIF report with Zizmor
         # I don't care about what version of Zizmor is used. Just use the latest; the token is not very strong, anyways.
