@@ -46,6 +46,7 @@ jobs:
       - name: sqlc generate
         if: success() || failure()
         run: |
+          go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
           sqlc generate
           if ! git diff --exit-code pkg/db/{db,models,querier,queries.sql}.go; then
             echo "sqlc generate failed. Please run 'sqlc generate' and commit the changes."
