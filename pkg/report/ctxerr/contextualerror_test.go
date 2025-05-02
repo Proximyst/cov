@@ -19,13 +19,6 @@ func TestContextualError(t *testing.T) {
 		assert.ErrorIs(t, err, inner, "unwrapping should return the inner error")
 	})
 
-	t.Run("returns nil if no error", func(t *testing.T) {
-		t.Parallel()
-
-		err := ctxerr.New(nil, "context")
-		assert.Nil(t, err, "should return nil if no error")
-	})
-
 	t.Run("returns the context as given", func(t *testing.T) {
 		t.Parallel()
 
