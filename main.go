@@ -1,7 +1,18 @@
 package main
 
-import "fmt"
+import (
+	"context"
+	"log/slog"
+	"os"
+
+	"github.com/proximyst/cov/cmd"
+)
 
 func main() {
-	fmt.Println("hello, world!")
+	ctx := context.Background()
+
+	if err := cmd.New().Run(ctx, os.Args); err != nil {
+		slog.Error("failed to run command", "error", err)
+		os.Exit(1)
+	}
 }
