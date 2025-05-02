@@ -12,7 +12,6 @@ func TestCreatingDB(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode")
 	}
-
 	t.Parallel()
 
 	t.Run("with default options", func(t *testing.T) {
