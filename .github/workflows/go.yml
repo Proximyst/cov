@@ -35,6 +35,13 @@ jobs:
         with:
           version: v2.0
 
+      - name: go mod tidy
+        run: |
+          if ! go mod tidy -diff; then
+            echo "go mod tidy failed. Please run 'go mod tidy' and commit the changes."
+            exit 1
+          fi
+
   test:
     name: Run all Go tests
     runs-on: ubuntu-latest

@@ -25,3 +25,4 @@ _precommit:
     zizmor .
     actionlint
     goimports -l .
+    go mod tidy -diff
