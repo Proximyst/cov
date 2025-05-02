@@ -56,7 +56,7 @@ jobs:
         run: |
           set -xeuo pipefail
           cd "$DIR"
-          strace -fe trace=process ninja -v coverage -C build # writes to build/meson-logs/coverage.{xml,info}
+          strace -vfe trace=process ninja -v coverage -C build # writes to build/meson-logs/coverage.{xml,info}
 
       - name: Ensure coverage reports exist
         run: |
