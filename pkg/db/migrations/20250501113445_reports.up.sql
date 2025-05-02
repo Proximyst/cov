@@ -4,7 +4,7 @@ CREATE TABLE reports (
     repository_id UUID NOT NULL REFERENCES repositories (id) ON DELETE CASCADE,
     -- the commit hash of the report.
     commit TEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW ()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX ON reports (repository_id, commit);
@@ -14,7 +14,7 @@ CREATE INDEX ON reports (repository_id, created_at);
 CREATE TABLE report_flags (
     report_id UUID NOT NULL REFERENCES reports (id) ON DELETE CASCADE,
     name TEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW (),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (report_id, name)
 );
 
@@ -29,7 +29,7 @@ CREATE TABLE report_files (
         coverage >= 0
         AND coverage <= 100
     ),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW ()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE UNIQUE INDEX ON report_files (repository_id, file_path, report_id);
@@ -50,7 +50,7 @@ CREATE TABLE report_file_line_regions (
     -- the count of times a statement was executed.
     -- the same statement might be executed multiple times.
     executed INT NOT NULL CHECK (executed >= 0),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW ()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX ON report_file_line_regions (repository_id, report_file_id);

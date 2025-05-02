@@ -1,9 +1,10 @@
 # Run all appropriate linters in a fixing mode.
 lint:
-    zizmor .
+    uvx zizmor .
     actionlint
     goimports -w .
     go mod tidy
+    uvx sqlfluff fix --dialect postgres pkg/db/migrations/
 
 # Run all tests.
 test:

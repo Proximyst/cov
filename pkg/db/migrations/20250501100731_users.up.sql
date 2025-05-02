@@ -4,8 +4,8 @@ CREATE TABLE users (
     username TEXT NOT NULL,
     display_name TEXT NOT NULL,
     password TEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW (),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW ()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE UNIQUE INDEX ON users (email);
@@ -19,7 +19,7 @@ CREATE TABLE user_tokens (
     -- access_token is a hashed random string. This is a PHC string.
     access_token TEXT NOT NULL,
     expiry TIMESTAMPTZ NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW ()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX ON user_tokens (user_id);
@@ -42,7 +42,7 @@ CREATE TABLE user_oauth2 (
     refresh_token_nonce TEXT NOT NULL,
     -- expiry is when the token expires. This is set by the service and may be cut short by either party at any time.
     expiry TIMESTAMPTZ NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW ()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE UNIQUE INDEX ON user_oauth2 (user_id, service);
