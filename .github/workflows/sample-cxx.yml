@@ -43,7 +43,17 @@ jobs:
       - name: Set up dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3 ninja-build meson gcc lcov gcovr strace
+          sudo apt-get install -y python3 ninja-build meson gcc gcovr strace
+      - name: Clone lcov
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          repository: linux-test-project/lcov
+          path: lcov
+          persist-credentials: false
+      - name: Install lcov
+        run: |
+          cd lcov
+          sudo make install
 
       - name: Meson build and test
         run: |
