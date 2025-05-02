@@ -36,7 +36,7 @@ jobs:
         run: uvx sqlfluff lint --dialect postgres pkg/db/migrations/
 
       - name: Run SQLFluff for GitHub annotations
-        run: uvx sqlfluff lint --dialect postgres pkg/db/migrations/ --format github | tee annotations.json
+        run: uvx sqlfluff lint --dialect postgres pkg/db/migrations/ --format github-annotation | tee annotations.json
 
       - name: Upload GitHub annotations
         uses: yuzutech/annotations-action@0e061a6e3ac848299310b6429b60d67cafd4e7f8 # v0.5.0
