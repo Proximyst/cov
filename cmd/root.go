@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 
+	"github.com/proximyst/cov/cmd/migrate"
 	"github.com/proximyst/cov/cmd/server"
 	"github.com/proximyst/cov/pkg/infra/log"
 	"github.com/urfave/cli/v3"
@@ -26,6 +27,7 @@ All options can also be set via environment variables. The environment variable 
 			log.FlagLogJSON(),
 		},
 		Commands: []*cli.Command{
+			migrate.New(),
 			server.New(),
 		},
 	}

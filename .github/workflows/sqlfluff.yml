@@ -1,0 +1,47 @@
+name: SQLFluff
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions: {}
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to check out the code
+      checks: write # to write annotations
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@6b9c6063abd6010835644d4c2e1bef4cf5cd0fca # v6.0.1
+        with:
+          # Enable caching ONLY for PRs within the main repo. Forks do not get cache.
+          # uvx will still use a cache within the job, so we don't download SQLFluff multiple times.
+          enable-cache: ${{ github.repository == github.event.pull_request.head.repo.full_name }}
+
+      - name: Run SQLFluff
+        run: uvx sqlfluff lint --dialect postgres pkg/db/migrations/
+
+      - name: Run SQLFluff for GitHub annotations
+        run: uvx sqlfluff lint --dialect postgres pkg/db/migrations/ --format github-annotation | tee annotations.json
+
+      - name: Upload GitHub annotations
+        uses: yuzutech/annotations-action@0e061a6e3ac848299310b6429b60d67cafd4e7f8 # v0.5.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          title: SQLFluff lint
+          input: annotations.json
+      

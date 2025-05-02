@@ -39,6 +39,15 @@ func TestGet(t *testing.T) {
 		value = env.Get("COV_TEST_ENV_VAR", "fallback_value")
 		assert.Equal(t, "fallback_value", value)
 	})
+
+	t.Run("converts key to uppercase", func(t *testing.T) {
+		t.Setenv("COV_TEST_ENV_VAR", "test_value")
+		value := env.Get("cov_test_env_var", "fallback_value")
+		assert.Equal(t, "test_value", value)
+
+		value = env.Get("test_env_var", "fallback_value")
+		assert.Equal(t, "test_value", value)
+	})
 }
 
 func TestGetBool(t *testing.T) {

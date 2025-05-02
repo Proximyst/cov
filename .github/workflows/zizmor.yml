@@ -37,7 +37,7 @@ jobs:
 
       - name: Generate SARIF report with Zizmor
         # I don't care about what version of Zizmor is used. Just use the latest; the token is not very strong, anyways.
-        run: uvx zizmor --format sarif . > results.sarif
+        run: uvx zizmor --format sarif . | tee results.sarif
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

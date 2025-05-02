@@ -47,6 +47,23 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read # to check out the code
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: "cov"
+          POSTGRES_PASSWORD: "cov"
+          POSTGRES_DB: "cov"
+          PGUSER: "cov"
+          PGDATABASE: "cov"
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd 'pg_isready'
+          --health-start-period 0s
+          --health-start-interval 1s
+          --health-interval 10s
+          --health-timeout 3s
+          --health-retries 5
 
     steps:
       - name: Checkout code

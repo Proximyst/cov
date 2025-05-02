@@ -12,6 +12,7 @@ const Prefix = "COV_"
 //
 // This asserts that the `key` has a prefix of `Prefix`.
 func Get(key, fallback string) string {
+	key = strings.ToUpper(key)
 	if !strings.HasPrefix(key, Prefix) {
 		key = Prefix + key
 	}

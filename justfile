@@ -1,9 +1,10 @@
 # Run all appropriate linters in a fixing mode.
 lint:
-    zizmor .
+    uvx zizmor .
     actionlint
     goimports -w .
     go mod tidy
+    uvx sqlfluff fix --dialect postgres pkg/db/migrations/
 
 # Run all tests.
 test:
@@ -20,6 +21,12 @@ build:
 # Run the binary.
 run *ARGS: build
     ./cov {{ARGS}}
+
+# Create and ready a development database. Assumes user-level access to Docker (or an alias to podman) exists.
+dev-db:
+    docker compose down --volumes || true
+    docker compose up -d --wait
+    just run migrate
 
 # Set up a Git pre-commit hook to run (fast) linters before committing.
 # This is a one-time setup step.

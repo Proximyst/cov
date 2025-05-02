@@ -52,7 +52,7 @@ jobs:
           chmod +x actionlint
 
       - name: Run Actionlint
-        run: ./actionlint -format "$(cat .github/workflows/actionlint-format.txt)" > results.sarif
+        run: ./actionlint -format "$(cat .github/workflows/actionlint-format.txt)" | tee results.sarif
 
       - name: Upload to GitHub security events
         if: success() || failure()
