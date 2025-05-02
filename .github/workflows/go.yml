@@ -29,9 +29,6 @@ jobs:
         uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5
         with:
           go-version-file: go.mod
-          cache-dependency-path: |
-            go.sum
-            .github/workflows/go.yml
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@1481404843c368bc19ca9406f87d6e0fc97bdcfd # v7
@@ -42,17 +39,16 @@ jobs:
         if: success() || failure()
         run: |
           if ! go mod tidy -diff; then
-            echo "go mod tidy failed. Please run 'go mod tidy' and commit the changes."
+            echo "go mod tidy failed. Please run 'just lint' and commit the changes."
             exit 1
           fi
 
       - name: sqlc generate
         if: success() || failure()
         run: |
-          go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
-          sqlc generate
+          go tool sqlc generate
           if ! git diff --exit-code pkg/db/{db,models,querier,queries.sql}.go; then
-            echo "sqlc generate failed. Please run 'sqlc generate' and commit the changes."
+            echo "sqlc generate failed. Please run 'just generate' and commit the changes."
             exit 1
           fi
 

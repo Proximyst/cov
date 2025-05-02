@@ -1,11 +1,14 @@
 # Run all appropriate linters in a fixing mode.
-lint:
+lint: && generate
     uvx zizmor .
     actionlint
     goimports -w .
     go mod tidy
     uvx sqlfluff fix --dialect postgres pkg/db/migrations/ pkg/db/queries.sql
-    sqlc generate
+
+# Generate code.
+generate:
+    go tool sqlc generate
 
 # Run all tests.
 test:
