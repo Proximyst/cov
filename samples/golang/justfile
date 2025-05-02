@@ -1,0 +1,9 @@
+# Test the sample. Requires Go 1.24.1 or newer; your toolchain will usually download it for you.
+test: _assert_installed
+    go test -covermode=set -coverprofile=set.cov ./...
+    go test -covermode=count -coverprofile=count.cov ./...
+    go test -covermode=atomic -coverprofile=atomic.cov ./...
+
+# Ensure all required tools are installed.
+_assert_installed:
+    command -v go &>/dev/null
