@@ -67,7 +67,8 @@ jobs:
         run: |
           set -xeuo pipefail
           cd "$DIR"
-          ninja coverage -C build # writes to build/meson-logs/coverage.{xml,info}
+          ninja coverage-xml -C build # writes to build/meson-logs/coverage.xml
+          ninja coverage-html -C build # writes to build/meson-logs/coverage.info
 
       - name: Ensure coverage reports exist
         run: |
