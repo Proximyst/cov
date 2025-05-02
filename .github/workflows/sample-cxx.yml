@@ -76,10 +76,12 @@ jobs:
           cd "$DIR"
           if [ ! -f build/meson-logs/coverage.xml ]; then
             echo "Coverage report not found!"
+            ls -la build/meson-logs
             exit 1
           fi
 
           if [ ! -f build/meson-logs/coverage.info ]; then
             echo "Coverage report not found!"
+            ls -la build/meson-logs
             exit 1
           fi
