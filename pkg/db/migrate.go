@@ -48,7 +48,7 @@ func ExecuteMigrations(ctx context.Context, migrations source.Driver, db *pgxpoo
 		select {
 		case <-ctx.Done():
 			mig.GracefulStop <- true
-		case _, _ = <-done:
+		case <-done:
 			// This is a no-op. We just want to ensure that the goroutine exits.
 		}
 	}()
