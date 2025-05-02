@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'samples/go/**'
+      - '.github/workflows/sample-go.yml'
   pull_request:
     types:
       - opened
@@ -13,6 +14,7 @@ on:
       - reopened
     paths:
       - 'samples/go/**'
+      - '.github/workflows/sample-go.yml'
   # It is unlikely that we will change this sample very often, hence we want to ensure it continues working.
   schedule:
     - cron: '0 2 5 * *' # every month on the 5th day at midnight 02:00 UTC
