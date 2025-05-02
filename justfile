@@ -4,6 +4,10 @@ lint:
     actionlint
     goimports -w .
 
+# Run all tests.
+test:
+    go test ./...
+
 # Set up a Git pre-commit hook to run (fast) linters before committing.
 # This is a one-time setup step.
 # Slow linters (e.g. tests) are not included in the pre-commit hook.
