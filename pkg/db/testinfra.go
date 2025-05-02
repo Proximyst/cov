@@ -20,6 +20,9 @@ type testDatabaseOptions struct {
 	// They are added between the embedded migrations according to the order of the keys.
 	// This allows for testing migrations by adding fake data at different points in the migration process.
 	additionalMigrations map[string]string
+	// DisableMigrations disables the migrations from running at all.
+	// This ignores the additional migrations as well.
+	disableMigrations bool
 }
 
 type testDatabaseOption = func(*testDatabaseOptions)
@@ -27,6 +30,12 @@ type testDatabaseOption = func(*testDatabaseOptions)
 func WithAdditionalMigration(name, content string) testDatabaseOption {
 	return func(opts *testDatabaseOptions) {
 		opts.additionalMigrations[name] = content
+	}
+}
+
+func WithoutMigrations() testDatabaseOption {
+	return func(opts *testDatabaseOptions) {
+		opts.disableMigrations = true
 	}
 }
 
@@ -79,7 +88,8 @@ func CreateTestDB(t testingT, opts ...testDatabaseOption) (*pgxpool.Pool, error)
 	pool.Close()
 
 	// Now we can connect to the new database.
-	pool, err = Connect(ctx, getTestDatabaseDSN(newDBName))
+	connString := getTestDatabaseDSN(newDBName)
+	pool, err = Connect(ctx, connString)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to test database: %w", err)
 	}
@@ -101,23 +111,25 @@ func CreateTestDB(t testingT, opts ...testDatabaseOption) (*pgxpool.Pool, error)
 		}
 	})
 
-	// Now, let's run the migrations.
-	var migrations source.Driver
-	if len(options.additionalMigrations) > 0 {
-		migrations, err = createMigrationSource(t.TempDir(), options.additionalMigrations)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create migration source with additional migrations: %w", err)
+	if !options.disableMigrations {
+		// Now, let's run the migrations.
+		var migrations source.Driver
+		if len(options.additionalMigrations) > 0 {
+			migrations, err = createMigrationSource(t.TempDir(), options.additionalMigrations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create migration source with additional migrations: %w", err)
+			}
+		} else {
+			migrations, err = EmbeddedMigrationsSource()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get embedded migrations: %w", err)
+			}
 		}
-	} else {
-		migrations, err = EmbeddedMigrationsSource()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get embedded migrations: %w", err)
-		}
-	}
-	defer migrations.Close()
+		defer migrations.Close()
 
-	if err := ExecuteMigrations(ctx, migrations, pool); err != nil {
-		return nil, fmt.Errorf("failed to run migrations: %w", err)
+		if err := ExecuteMigrations(ctx, migrations, pool); err != nil {
+			return nil, fmt.Errorf("failed to run migrations: %w", err)
+		}
 	}
 
 	// Now we're ready to run tests!

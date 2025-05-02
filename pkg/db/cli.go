@@ -1,8 +1,6 @@
 package db
 
 import (
-	"context"
-
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/proximyst/cov/pkg/infra/env"
 	"github.com/urfave/cli/v3"
@@ -24,13 +22,4 @@ func FlagConnectionString() cli.Flag {
 			return nil
 		},
 	}
-}
-
-func ConnectFromCommand(ctx context.Context, c *cli.Command) (*pgxpool.Pool, error) {
-	connString := c.String("database")
-	pool, err := Connect(ctx, connString)
-	if err != nil {
-		return nil, cli.Exit("failed to connect to database: "+err.Error(), 1)
-	}
-	return pool, nil
 }

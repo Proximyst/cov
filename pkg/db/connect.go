@@ -7,6 +7,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+var _ DBTX = (*pgxpool.Pool)(nil)
+
 // Connect establishes a connection to the PostgreSQL database using the provided connection string.
 // It returns a connection pool and an optional error. If the error is not nil, the connection pool is nil and does not need closing.
 //
