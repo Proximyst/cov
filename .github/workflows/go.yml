@@ -36,9 +36,19 @@ jobs:
           version: v2.0
 
       - name: go mod tidy
+        if: success() && failure()
         run: |
           if ! go mod tidy -diff; then
             echo "go mod tidy failed. Please run 'go mod tidy' and commit the changes."
+            exit 1
+          fi
+
+      - name: sqlc generate
+        if: success() && failure()
+        run: |
+          sqlc generate
+          if ! git diff --exit-code pkg/db/{db,models,querier,queries.sql}.go; then
+            echo "sqlc generate failed. Please run 'sqlc generate' and commit the changes."
             exit 1
           fi
 

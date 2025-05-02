@@ -17,6 +17,7 @@ When developing, you need:
 * `actionlint` (<https://github.com/rhysd/actionlint>)
 * `goimports` (<https://pkg.go.dev/golang.org/x/tools/cmd/goimports>)
 * `docker` & `docker compose` (<https://docs.docker.com/engine/install/>, must be accessible sudo-less; [Podman](https://podman.io/docs/installation) probably also works if aliased to `docker`)
+* `sqlc` (<https://docs.sqlc.dev/en/latest/overview/install.html>)
 
 You may want to run `just setup-precommit` to have some fast linters running on every commit.
 

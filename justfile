@@ -4,7 +4,8 @@ lint:
     actionlint
     goimports -w .
     go mod tidy
-    uvx sqlfluff fix --dialect postgres pkg/db/migrations/
+    uvx sqlfluff fix --dialect postgres pkg/db/migrations/ pkg/db/queries.sql
+    sqlc generate
 
 # Run all tests.
 test:
