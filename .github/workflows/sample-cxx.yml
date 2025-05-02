@@ -50,8 +50,7 @@ jobs:
           cd "$DIR"
           meson setup build -Db_coverage=true
           (cd build && meson test)
-          ninja coverage-xml -C build # writes to build/meson-logs/coverage.xml
-          ninja coverage-html -C build # writes to build/meson-logs/coverage.info
+          ninja coverage -C build # writes to build/meson-logs/coverage.{xml,info}
 
       - name: Ensure coverage reports exist
         run: |
