@@ -48,11 +48,13 @@ jobs:
 
       - name: Build and test
         run: |
+          set -xeuo pipefail
           cd "$DIR"
           ./mvnw clean test
 
       - name: Ensure coverage report exists
         run: |
+          set -xeuo pipefail
           cd "$DIR"
           if [ ! -f target/site/jacoco/jacoco.xml ]; then
             echo "Coverage report not found!"

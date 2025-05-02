@@ -47,6 +47,7 @@ jobs:
 
       - name: Build and test
         run: |
+          set -xeuo pipefail
           cd "$DIR"
           meson setup build -Db_coverage=true
           (cd build && meson test)
@@ -54,6 +55,7 @@ jobs:
 
       - name: Ensure coverage reports exist
         run: |
+          set -xeuo pipefail
           cd "$DIR"
           if [ ! -f build/meson-logs/coverage.xml ]; then
             echo "Coverage report not found!"

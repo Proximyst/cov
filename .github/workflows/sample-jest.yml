@@ -43,12 +43,14 @@ jobs:
 
       - name: Build and test
         run: |
+          set -xeuo pipefail
           cd samples/jest
           npm install
           npm test
 
       - name: Ensure coverage reports exist
         run: |
+          set -xeuo pipefail
           cd samples/jest
           if [ ! -f coverage/lcov.info ]; then
             echo "Coverage report not found!"

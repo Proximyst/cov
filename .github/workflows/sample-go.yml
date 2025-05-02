@@ -41,6 +41,7 @@ jobs:
 
       - name: Build and test
         run: |
+          set -xeuo pipefail
           cd samples/golang/
           go test -covermode=set -coverprofile=set.cov ./...
           go test -covermode=count -coverprofile=count.cov ./...
