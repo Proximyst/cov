@@ -38,7 +38,7 @@ setup-precommit:
     chmod +x .git/hooks/pre-commit
 
 _precommit:
-    zizmor .
+    uvx zizmor .
     actionlint
     goimports -l .
     go mod tidy -diff
