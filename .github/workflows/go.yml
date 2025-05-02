@@ -56,7 +56,7 @@ jobs:
           POSTGRES_DB: "cov"
           PGUSER: "cov"
           PGDATABASE: "cov"
-        ports: ["5432"]
+        ports: ["5432:5432"]
         options: >-
           --health-cmd 'pg_isready'
           --health-start-period 0s
