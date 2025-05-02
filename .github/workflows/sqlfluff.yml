@@ -44,4 +44,3 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           title: SQLFluff lint
           input: annotations.json
-      
