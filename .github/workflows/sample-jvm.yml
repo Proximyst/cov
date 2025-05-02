@@ -1,0 +1,58 @@
+name: Samples - JVM
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'samples/java/**'
+      - 'samples/kotlin/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'samples/java/**'
+      - 'samples/kotlin/**'
+  # It is unlikely that we will change this sample very often, hence we want to ensure it continues working.
+  schedule:
+    - cron: '0 2 5 * *' # every month on the 5th day at midnight 02:00 UTC
+
+permissions: {}
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        lang: [java, kotlin]
+
+    name: Build and verify ${{ matrix.lang }} sample
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      DIR: samples/${{ matrix.lang }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          java-version: '21'
+          distribution: temurin
+
+      - name: Build and test
+        run: |
+          cd "$DIR"
+          ./mvnw clean test
+
+      - name: Ensure coverage report exists
+        run: |
+          cd "$DIR"
+          if [ ! -f target/site/jacoco/jacoco.xml ]; then
+            echo "Coverage report not found!"
+            exit 1
+          fi

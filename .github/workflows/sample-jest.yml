@@ -1,0 +1,53 @@
+name: Samples - Jest
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'samples/jest/**'
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    paths:
+      - 'samples/jest/**'
+  # It is unlikely that we will change this sample very often, hence we want to ensure it continues working.
+  schedule:
+    - cron: '0 2 5 * *' # every month on the 5th day at midnight 02:00 UTC
+
+permissions: {}
+
+jobs:
+  verify:
+    name: Build and verify JavaScript sample
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to check out the code
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: samples/jest/package-lock.json
+
+      - name: Build and test
+        run: |
+          cd samples/jest
+          npm test
+
+      - name: Ensure coverage reports exist
+        run: |
+          cd samples/jest
+          if [ ! -f coverage/lcov.info ]; then
+            echo "Coverage report not found!"
+            exit 1
+          fi
