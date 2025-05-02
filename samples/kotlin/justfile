@@ -1,0 +1,7 @@
+# Run the sample tests. Requires Java 21 or newer.
+test: _assert_installed
+    ./mvnw clean test
+
+# Ensure all required tools are installed.
+_assert_installed:
+    command -v javac &>/dev/null

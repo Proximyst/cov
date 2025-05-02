@@ -1,0 +1,87 @@
+name: Samples - CXX
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'samples/c/**'
+      - 'samples/cpp/**'
+      - '.github/workflows/sample-cxx.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'samples/c/**'
+      - 'samples/cpp/**'
+      - '.github/workflows/sample-cxx.yml'
+  # It is unlikely that we will change this sample very often, hence we want to ensure it continues working.
+  schedule:
+    - cron: '0 2 5 * *' # every month on the 5th day at midnight 02:00 UTC
+
+permissions: {}
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        lang: [c, cpp]
+
+    name: Build and verify ${{ matrix.lang }} sample
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      DIR: samples/${{ matrix.lang }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3 ninja-build meson gcc gcovr strace lcov
+      # Ubuntu 24.02 (as of writing) has a bad version of lcov. I need this fix: https://github.com/linux-test-project/lcov/commit/bf135caf5f626e02191c42bd2773e08a0bb9b7e5
+      - name: Clone lcov
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          repository: linux-test-project/lcov
+          path: lcov
+          persist-credentials: false
+      - name: Install lcov
+        run: |
+          cd lcov
+          sudo make install
+
+      - name: Meson build and test
+        run: |
+          set -xeuo pipefail
+          cd "$DIR"
+          meson setup build -Db_coverage=true
+          cd build && meson test
+
+      - name: Generate coverage reports
+        run: |
+          set -xeuo pipefail
+          cd "$DIR"
+          ninja coverage-xml -C build # writes to build/meson-logs/coverage.xml
+          ninja coverage-html -C build # writes to build/meson-logs/coverage.info
+
+      - name: Ensure coverage reports exist
+        run: |
+          set -xeuo pipefail
+          cd "$DIR"
+          if [ ! -f build/meson-logs/coverage.xml ]; then
+            echo "Coverage report not found!"
+            ls -la build/meson-logs
+            exit 1
+          fi
+
+          if [ ! -f build/meson-logs/coverage.info ]; then
+            echo "Coverage report not found!"
+            ls -la build/meson-logs
+            exit 1
+          fi

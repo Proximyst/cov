@@ -1,0 +1,14 @@
+{
+  "name": "sample",
+  "version": "1.0.0",
+  "author": "Mariell Hoversholm",
+  "description": "A code coverage sample.",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest --coverage"
+  },
+  "type": "commonjs",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

@@ -1,0 +1,48 @@
+name: Samples - Go
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'samples/go/**'
+      - '.github/workflows/sample-go.yml'
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    paths:
+      - 'samples/go/**'
+      - '.github/workflows/sample-go.yml'
+  # It is unlikely that we will change this sample very often, hence we want to ensure it continues working.
+  schedule:
+    - cron: '0 2 5 * *' # every month on the 5th day at midnight 02:00 UTC
+
+permissions: {}
+
+jobs:
+  verify:
+    name: Build and verify Go sample
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to check out the code
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5
+        with:
+          go-version-file: samples/golang/go.mod
+
+      - name: Build and test
+        run: |
+          set -xeuo pipefail
+          cd samples/golang/
+          go test -covermode=set -coverprofile=set.cov ./...
+          go test -covermode=count -coverprofile=count.cov ./...
+          go test -covermode=atomic -coverprofile=atomic.cov ./...
