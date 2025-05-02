@@ -50,10 +50,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y python3 ninja-build gcc lcov
-          uv pip install --user meson gcovr
+          uv venv
+          source .venv/bin/activate
+          uv pip install meson gcovr
 
       - name: Build and test
         run: |
+          source .venv/bin/activate
           set -xeuo pipefail
           cd "$DIR"
           uvx meson setup build -Db_coverage=true
