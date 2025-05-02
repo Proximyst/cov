@@ -44,6 +44,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y python3 ninja-build meson gcc gcovr strace
+      # Ubuntu 24.02 (as of writing) has a bad version of lcov. I need this fix: https://github.com/linux-test-project/lcov/commit/bf135caf5f626e02191c42bd2773e08a0bb9b7e5
       - name: Clone lcov
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
@@ -60,13 +61,13 @@ jobs:
           set -xeuo pipefail
           cd "$DIR"
           meson setup build -Db_coverage=true
-          cd build && meson test --verbose
+          cd build && meson test
 
       - name: Generate coverage reports
         run: |
           set -xeuo pipefail
           cd "$DIR"
-          strace -s 65536 -vfe trace=process,chdir ninja -v coverage -C build # writes to build/meson-logs/coverage.{xml,info}
+          ninja coverage -C build # writes to build/meson-logs/coverage.{xml,info}
 
       - name: Ensure coverage reports exist
         run: |
