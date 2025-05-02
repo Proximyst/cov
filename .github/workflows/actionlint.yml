@@ -20,6 +20,7 @@ jobs:
     permissions:
       contents: read # to check out the code
       actions: read # to read the workflow files
+      security-events: write # for uploading the SARIF report
 
     env:
       ACTIONLINT_VERSION: 1.7.7
