@@ -71,3 +71,10 @@ jobs:
             echo "Coverage report not found!"
             exit 1
           fi
+
+      - name: Print build.ninja
+        if: failure()
+        run: |
+          set -xeuo pipefail
+          cd "$DIR"
+          cat build/build.ninja
