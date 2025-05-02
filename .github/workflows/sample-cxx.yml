@@ -43,7 +43,7 @@ jobs:
       - name: Set up dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3 ninja-build meson gcc gcovr strace
+          sudo apt-get install -y python3 ninja-build meson gcc gcovr strace lcov
       # Ubuntu 24.02 (as of writing) has a bad version of lcov. I need this fix: https://github.com/linux-test-project/lcov/commit/bf135caf5f626e02191c42bd2773e08a0bb9b7e5
       - name: Clone lcov
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
