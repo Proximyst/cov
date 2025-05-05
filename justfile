@@ -33,6 +33,11 @@ dev-db: && (run "migrate")
     docker compose down --volumes || true
     docker compose up -d --wait
 
+# Update all dependencies.
+update: && lint
+    go get -u ./...
+    go mod tidy
+
 # Set up a Git pre-commit hook to run (fast) linters before committing.
 # This is a one-time setup step.
 # Slow linters (e.g. tests) are not included in the pre-commit hook.
