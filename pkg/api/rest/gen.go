@@ -12,6 +12,7 @@ const (
 	ErrorResponseErrorInternalServerError ErrorResponseError = "InternalServerError"
 	ErrorResponseErrorMethodNotAllowed    ErrorResponseError = "MethodNotAllowed"
 	ErrorResponseErrorNotFound            ErrorResponseError = "NotFound"
+	ErrorResponseErrorReportInvalid       ErrorResponseError = "ReportInvalid"
 )
 
 // ErrorResponse A generic error response
@@ -26,16 +27,31 @@ type ErrorResponse struct {
 // ErrorResponseError Error code, only somewhat human-readable
 type ErrorResponseError string
 
+// ParseReportTextBody defines parameters for ParseReport.
+type ParseReportTextBody = string
+
+// ParseReportTextRequestBody defines body for ParseReport for text/plain ContentType.
+type ParseReportTextRequestBody = ParseReportTextBody
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// OpenAPI specification
-	// (GET /openapi.json)
+	// OpenAPI specification (JSON)
+	// (GET /api/openapi.json)
 	OpenapiJson(c *gin.Context)
-	// OpenAPI specification
-	// (GET /openapi.yaml)
+	// OpenAPI specification (YAML)
+	// (GET /api/openapi.yaml)
 	OpenapiYaml(c *gin.Context)
+	// Redoc documentation
+	// (GET /api/redoc)
+	Redoc(c *gin.Context)
+	// Scalar documentation
+	// (GET /api/scalar)
+	Scalar(c *gin.Context)
+	// Parse a code coverage report
+	// (POST /api/v0/parse-report)
+	ParseReport(c *gin.Context)
 	// Ping the server
-	// (GET /v1/ping)
+	// (GET /api/v1/ping)
 	Ping(c *gin.Context)
 }
 
@@ -72,6 +88,45 @@ func (siw *ServerInterfaceWrapper) OpenapiYaml(c *gin.Context) {
 	}
 
 	siw.Handler.OpenapiYaml(c)
+}
+
+// Redoc operation middleware
+func (siw *ServerInterfaceWrapper) Redoc(c *gin.Context) {
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.Redoc(c)
+}
+
+// Scalar operation middleware
+func (siw *ServerInterfaceWrapper) Scalar(c *gin.Context) {
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.Scalar(c)
+}
+
+// ParseReport operation middleware
+func (siw *ServerInterfaceWrapper) ParseReport(c *gin.Context) {
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.ParseReport(c)
 }
 
 // Ping operation middleware
@@ -114,7 +169,10 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 		ErrorHandler:       errorHandler,
 	}
 
-	router.GET(options.BaseURL+"/openapi.json", wrapper.OpenapiJson)
-	router.GET(options.BaseURL+"/openapi.yaml", wrapper.OpenapiYaml)
-	router.GET(options.BaseURL+"/v1/ping", wrapper.Ping)
+	router.GET(options.BaseURL+"/api/openapi.json", wrapper.OpenapiJson)
+	router.GET(options.BaseURL+"/api/openapi.yaml", wrapper.OpenapiYaml)
+	router.GET(options.BaseURL+"/api/redoc", wrapper.Redoc)
+	router.GET(options.BaseURL+"/api/scalar", wrapper.Scalar)
+	router.POST(options.BaseURL+"/api/v0/parse-report", wrapper.ParseReport)
+	router.GET(options.BaseURL+"/api/v1/ping", wrapper.Ping)
 }

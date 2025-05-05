@@ -11,8 +11,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
-	"github.com/proximyst/cov/pkg/health"
-	"github.com/proximyst/cov/pkg/rest"
+	"github.com/proximyst/cov/pkg/api/health"
+	"github.com/proximyst/cov/pkg/api/rest"
 )
 
 func run(ctx context.Context, healthAddr, restAddr string) error {

@@ -1,17 +1,16 @@
-package health
+package rest
 
 import (
 	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 //go:generate go tool oapi-codegen -config oapi-codegen.yaml openapi.yaml
-//go:generate go run ../../scripts/yaml2json -i openapi.yaml -o openapi.json
+//go:generate go run ../../../scripts/yaml2json -i openapi.yaml -o openapi.json
 
-func NewRouter(gatherer prometheus.TransactionalGatherer, health Health) *gin.Engine {
+func NewRouter() *gin.Engine {
 	router := gin.New()
 	router.HandleMethodNotAllowed = true
 	router.Use(gin.CustomRecovery(func(c *gin.Context, err any) {
@@ -31,22 +30,10 @@ func NewRouter(gatherer prometheus.TransactionalGatherer, health Health) *gin.En
 		})
 	})
 
-	RegisterHandlers(router, &server{
-		metrics: gatherer,
-		health:  health,
-	})
+	RegisterHandlers(router, &server{})
 	return router
 }
 
 var _ ServerInterface = (*server)(nil)
 
-type server struct {
-	metrics prometheus.TransactionalGatherer
-	health  Health
-}
-
-var _ Health = (*Service)(nil)
-
-type Health interface {
-	Health() HealthResponse
-}
+type server struct{}

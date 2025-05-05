@@ -47,17 +47,23 @@ type HealthResponseStatus string
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Health check
-	// (GET /healthz)
+	// (GET /api/healthz)
 	Healthz(c *gin.Context)
 	// Metrics
-	// (GET /metrics)
+	// (GET /api/metrics)
 	Metrics(c *gin.Context)
-	// OpenAPI specification
-	// (GET /openapi.json)
+	// OpenAPI specification (JSON)
+	// (GET /api/openapi.json)
 	OpenapiJson(c *gin.Context)
-	// OpenAPI specification
-	// (GET /openapi.yaml)
+	// OpenAPI specification (YAML)
+	// (GET /api/openapi.yaml)
 	OpenapiYaml(c *gin.Context)
+	// Redoc documentation
+	// (GET /api/redoc)
+	Redoc(c *gin.Context)
+	// Scalar documentation
+	// (GET /api/scalar)
+	Scalar(c *gin.Context)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -121,6 +127,32 @@ func (siw *ServerInterfaceWrapper) OpenapiYaml(c *gin.Context) {
 	siw.Handler.OpenapiYaml(c)
 }
 
+// Redoc operation middleware
+func (siw *ServerInterfaceWrapper) Redoc(c *gin.Context) {
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.Redoc(c)
+}
+
+// Scalar operation middleware
+func (siw *ServerInterfaceWrapper) Scalar(c *gin.Context) {
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.Scalar(c)
+}
+
 // GinServerOptions provides options for the Gin server.
 type GinServerOptions struct {
 	BaseURL      string
@@ -148,8 +180,10 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 		ErrorHandler:       errorHandler,
 	}
 
-	router.GET(options.BaseURL+"/healthz", wrapper.Healthz)
-	router.GET(options.BaseURL+"/metrics", wrapper.Metrics)
-	router.GET(options.BaseURL+"/openapi.json", wrapper.OpenapiJson)
-	router.GET(options.BaseURL+"/openapi.yaml", wrapper.OpenapiYaml)
+	router.GET(options.BaseURL+"/api/healthz", wrapper.Healthz)
+	router.GET(options.BaseURL+"/api/metrics", wrapper.Metrics)
+	router.GET(options.BaseURL+"/api/openapi.json", wrapper.OpenapiJson)
+	router.GET(options.BaseURL+"/api/openapi.yaml", wrapper.OpenapiYaml)
+	router.GET(options.BaseURL+"/api/redoc", wrapper.Redoc)
+	router.GET(options.BaseURL+"/api/scalar", wrapper.Scalar)
 }

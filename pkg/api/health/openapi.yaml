@@ -8,11 +8,13 @@ info:
   version: 0.1.0
 
 paths:
-  /openapi.json:
+  /api/openapi.json:
     get:
-      summary: OpenAPI specification
+      summary: OpenAPI specification (JSON)
       description: Get the OpenAPI specification for the API.
       operationId: openapi-json
+      tags:
+        - openapi
       responses:
         '200':
           description: Successfully retrieved OpenAPI specification
@@ -21,11 +23,13 @@ paths:
               schema:
                 type: object
                 additionalProperties: true
-  /openapi.yaml:
+  /api/openapi.yaml:
     get:
-      summary: OpenAPI specification
+      summary: OpenAPI specification (YAML)
       description: Get the OpenAPI specification for the API.
       operationId: openapi-yaml
+      tags:
+        - openapi
       responses:
         '200':
           description: Successfully retrieved OpenAPI specification
@@ -34,7 +38,7 @@ paths:
               schema:
                 type: object
                 additionalProperties: true
-  /healthz:
+  /api/healthz:
     get:
       summary: Health check
       description: Check whether the service is healthy.
@@ -52,7 +56,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthResponse'
-  /metrics:
+  /api/redoc:
+    get:
+      summary: Redoc documentation
+      description: Get the Redoc documentation for the API.
+      operationId: redoc
+      tags:
+        - openapi
+        - documentation
+      responses:
+        '200':
+          description: Successfully retrieved Redoc documentation
+          content:
+            text/html:
+              schema:
+                type: string
+                format: html
+  /api/scalar:
+    get:
+      summary: Scalar documentation
+      description: Get the Scalar documentation for the API.
+      operationId: scalar
+      tags:
+        - openapi
+        - documentation
+      responses:
+        '200':
+          description: Successfully retrieved Scalar documentation
+          content:
+            text/html:
+              schema:
+                type: string
+                format: html
+  /api/metrics:
     get:
       summary: Metrics
       description: Get the service metrics in Prometheus exposition format.
