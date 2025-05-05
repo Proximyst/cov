@@ -7,11 +7,53 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/goccy/go-yaml"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/proximyst/cov/pkg/health"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestOpenAPIEndpoints(t *testing.T) {
+	t.Parallel()
+	gin.SetMode(gin.TestMode)
+
+	t.Run("json", func(t *testing.T) {
+		t.Parallel()
+
+		registry := prometheus.NewRegistry()
+		svc := health.NewService(t.Context(), registry)
+		router := health.NewRouter(prometheus.ToTransactionalGatherer(registry), svc)
+
+		recorder := httptest.NewRecorder()
+		router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "GET", "/openapi.json", nil))
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.Equal(t, "application/json; charset=utf-8", recorder.Header().Get("Content-Type"))
+
+		var body map[string]any
+		err := json.Unmarshal(recorder.Body.Bytes(), &body)
+		require.NoError(t, err, "failed to unmarshal OpenAPI JSON")
+	})
+
+	t.Run("yaml", func(t *testing.T) {
+		t.Parallel()
+
+		registry := prometheus.NewRegistry()
+		svc := health.NewService(t.Context(), registry)
+		router := health.NewRouter(prometheus.ToTransactionalGatherer(registry), svc)
+
+		recorder := httptest.NewRecorder()
+		router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "GET", "/openapi.yaml", nil))
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.Equal(t, "application/yaml; charset=utf-8", recorder.Header().Get("Content-Type"))
+
+		var body map[string]any
+		err := yaml.Unmarshal(recorder.Body.Bytes(), &body)
+		require.NoError(t, err, "failed to unmarshal OpenAPI YAML")
+	})
+}
 
 func TestMetricsEndpoint(t *testing.T) {
 	t.Parallel()
