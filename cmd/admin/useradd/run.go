@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/proximyst/cov/pkg/api/auth"
 	"github.com/proximyst/cov/pkg/db"
 )
 
@@ -85,7 +86,25 @@ func insertUser(ctx context.Context, q db.Querier, username string) (pgtype.UUID
 }
 
 func insertPassword(ctx context.Context, q db.Querier, userID pgtype.UUID, password string) error {
-	// FIXME: Hash the password before storing it
+	hashed, err := auth.HashEncoded([]byte(password))
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	if err := q.CreateUserPassword(ctx, db.CreateUserPasswordParams{
+		ID:       userID,
+		Password: hashed,
+	}); err != nil {
+		return fmt.Errorf("failed to create user password: %w", err)
+	}
+	if _, err := q.CreateAuditLogEvent(ctx, db.CreateAuditLogEventParams{
+		EventType: db.AuditLogEventTypeUserPasswordInserted,
+		EventData: db.AuditLogEventData{
+			UserPasswordInserted: &db.AuditLogUserPasswordInserted{UserID: userID.String()},
+		},
+	}); err != nil {
+		return fmt.Errorf("failed to create audit log event for user password insertion: %w", err)
+	}
 
 	return nil
 }
