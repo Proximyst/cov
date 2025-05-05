@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/proximyst/cov/pkg/health"
+	"github.com/proximyst/cov/pkg/api/health"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

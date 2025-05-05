@@ -1,0 +1,135 @@
+# This file is human-written. It is used as a source to generate the gen.go and openapi.json files.
+# The latest source of this file is in: https://github.com/Proximyst/cov/blob/main/pkg/rest/openapi.yaml
+
+openapi: '3.0.4'
+info:
+  title: cov API
+  description: The RESTful API for cov.
+  version: 0.1.0
+
+paths:
+  /api/openapi.json:
+    get:
+      summary: OpenAPI specification (JSON)
+      description: Get the OpenAPI specification for the API.
+      operationId: openapi-json
+      tags:
+        - openapi
+      responses:
+        '200':
+          description: Successfully retrieved OpenAPI specification
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+  /api/openapi.yaml:
+    get:
+      summary: OpenAPI specification (YAML)
+      description: Get the OpenAPI specification for the API.
+      operationId: openapi-yaml
+      tags:
+        - openapi
+      responses:
+        '200':
+          description: Successfully retrieved OpenAPI specification
+          content:
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: true
+  /api/redoc:
+    get:
+      summary: Redoc documentation
+      description: Get the Redoc documentation for the API.
+      operationId: redoc
+      tags:
+        - openapi
+        - documentation
+      responses:
+        '200':
+          description: Successfully retrieved Redoc documentation
+          content:
+            text/html:
+              schema:
+                type: string
+                format: html
+  /api/scalar:
+    get:
+      summary: Scalar documentation
+      description: Get the Scalar documentation for the API.
+      operationId: scalar
+      tags:
+        - openapi
+        - documentation
+      responses:
+        '200':
+          description: Successfully retrieved Scalar documentation
+          content:
+            text/html:
+              schema:
+                type: string
+                format: html
+  /api/v1/ping:
+    get:
+      summary: Ping the server
+      description: Check whether the server is alive.
+      operationId: ping
+      tags:
+        - v1
+        - testing
+      responses:
+        '204':
+          description: Server is alive
+  /api/v0/parse-report:
+    post:
+      summary: Parse a code coverage report
+      description: Parse a code coverage report and return the results.
+      operationId: parse-report
+      deprecated: true
+      tags:
+        - v0
+        - testing
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+              description: The code coverage report in text format.
+      responses:
+        '200':
+          description: Successfully parsed the report
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request. Could not parse the report.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      description: A generic error response
+      properties:
+        error:
+          type: string
+          enum:
+            - InternalServerError
+            - NotFound
+            - MethodNotAllowed
+            - ReportInvalid
+          description: Error code, only somewhat human-readable
+          example: InternalServerError
+        description:
+          type: string
+          description: Human-readable description of the error
+          example: Server panicked
+      required:
+        - error
