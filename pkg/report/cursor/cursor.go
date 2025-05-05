@@ -36,7 +36,7 @@ func (c *C) Peek() (byte, error) {
 	if !c.canRead(1) {
 		return 0, io.EOF
 	}
-	return c.data[c.pos+1], nil
+	return c.data[c.pos], nil
 }
 
 // ReadByte reads a single byte from the cursor and advances the cursor position by 1.

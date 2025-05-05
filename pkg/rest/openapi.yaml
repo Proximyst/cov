@@ -1,0 +1,65 @@
+# This file is human-written. It is used as a source to generate the gen.go and openapi.json files.
+# The latest source of this file is in: https://github.com/Proximyst/cov/blob/main/pkg/rest/openapi.yaml
+
+openapi: '3.0.4'
+info:
+  title: cov API
+  description: The RESTful API for cov.
+  version: 0.1.0
+
+paths:
+  /openapi.json:
+    get:
+      summary: OpenAPI specification
+      description: Get the OpenAPI specification for the API.
+      operationId: openapi-json
+      responses:
+        '200':
+          description: Successfully retrieved OpenAPI specification
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+  /openapi.yaml:
+    get:
+      summary: OpenAPI specification
+      description: Get the OpenAPI specification for the API.
+      operationId: openapi-yaml
+      responses:
+        '200':
+          description: Successfully retrieved OpenAPI specification
+          content:
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: true
+  /v1/ping:
+    get:
+      summary: Ping the server
+      description: Check whether the server is alive.
+      operationId: ping
+      responses:
+        '204':
+          description: Server is alive
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      description: A generic error response
+      properties:
+        error:
+          type: string
+          enum:
+            - InternalServerError
+            - NotFound
+            - MethodNotAllowed
+          description: Error code, only somewhat human-readable
+          example: InternalServerError
+        description:
+          type: string
+          description: Human-readable description of the error
+          example: Server panicked
+      required:
+        - error

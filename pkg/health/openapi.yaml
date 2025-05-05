@@ -1,0 +1,108 @@
+# This file is human-written. It is used as a source to generate the gen.go and openapi.json files.
+# The latest source of this file is in: https://github.com/Proximyst/cov/blob/main/pkg/health/openapi.yaml
+
+openapi: '3.0.4'
+info:
+  title: cov Health API
+  description: The health API for cov.
+  version: 0.1.0
+
+paths:
+  /openapi.json:
+    get:
+      summary: OpenAPI specification
+      description: Get the OpenAPI specification for the API.
+      operationId: openapi-json
+      responses:
+        '200':
+          description: Successfully retrieved OpenAPI specification
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+  /openapi.yaml:
+    get:
+      summary: OpenAPI specification
+      description: Get the OpenAPI specification for the API.
+      operationId: openapi-yaml
+      responses:
+        '200':
+          description: Successfully retrieved OpenAPI specification
+          content:
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: true
+  /healthz:
+    get:
+      summary: Health check
+      description: Check whether the service is healthy.
+      operationId: healthz
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '500':
+          description: Service is not healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /metrics:
+    get:
+      summary: Metrics
+      description: Get the service metrics in Prometheus exposition format.
+      operationId: metrics
+      responses:
+        '200':
+          description: Successfully retrieved metrics
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: |
+                  # HELP up Whether the service is up.
+                  # TYPE up gauge
+                  up 1
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      description: A generic error response
+      properties:
+        error:
+          type: string
+          enum:
+            - InternalServerError
+            - NotFound
+            - MethodNotAllowed
+          description: Error code, only somewhat human-readable
+          example: InternalServerError
+        description:
+          type: string
+          description: Human-readable description of the error
+          example: Server panicked
+      required:
+        - error
+    HealthResponse:
+      type: object
+      description: A response indicating the health of the service.
+      properties:
+        status:
+          type: string
+          enum: ["ok", "error"]
+          example: "ok"
+          description: The overall health status of the service.
+        components:
+          type: object
+          description: Each component's health status.
+          additionalProperties:
+            type: string
+      required:
+        - status
+        - components

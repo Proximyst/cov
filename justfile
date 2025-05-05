@@ -9,6 +9,8 @@ lint: && generate
 # Generate code.
 generate:
     go tool sqlc generate
+    go generate ./...
+    goimports -w .
 
 # Run all tests.
 test:
