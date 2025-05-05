@@ -14,9 +14,9 @@ var openapiJson []byte
 var openapiYaml []byte
 
 func (s *server) OpenapiJson(c *gin.Context) {
-	c.Data(http.StatusOK, "application/json", openapiJson)
+	c.Data(http.StatusOK, "application/json; charset=utf-8", openapiJson)
 }
 
 func (s *server) OpenapiYaml(c *gin.Context) {
-	c.Data(http.StatusOK, "application/yaml", openapiYaml)
+	c.Data(http.StatusOK, "application/yaml; charset=utf-8", openapiYaml)
 }

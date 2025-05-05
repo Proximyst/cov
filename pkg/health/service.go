@@ -2,6 +2,7 @@ package health
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -10,10 +11,15 @@ import (
 var _ Marker = (*Service)(nil)
 
 type Service struct {
-	metrics    *prometheus.Registry
-	health     chan component
-	lock       *sync.RWMutex
-	components map[string]component
+	metrics *prometheus.Registry
+
+	componentsLock *sync.RWMutex
+	health         chan component
+	components     map[string]component
+
+	changeLock *sync.RWMutex
+	change     chan struct{}
+	closed     bool
 }
 
 // Marker defines the contract for marking the health of components.
@@ -29,29 +35,28 @@ type component struct {
 }
 
 func NewService(ctx context.Context, metrics *prometheus.Registry) *Service {
-	updates := make(chan component, 4)
-	lock := &sync.RWMutex{}
-	components := make(map[string]component)
+	svc := &Service{
+		metrics: metrics,
+
+		health:         make(chan component, 1),
+		componentsLock: &sync.RWMutex{},
+		components:     make(map[string]component, 16),
+
+		changeLock: &sync.RWMutex{},
+		change:     make(chan struct{}),
+	}
+	svc.MarkHealthy("health-service", "initialised")
+
 	go func() {
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case comp := <-updates:
-				lock.Lock()
-				components[comp.component] = comp
-				lock.Unlock()
+			case comp := <-svc.health:
+				svc.handleUpdate(comp)
 			}
 		}
 	}()
-
-	svc := &Service{
-		metrics:    metrics,
-		health:     updates,
-		lock:       lock,
-		components: components,
-	}
-	svc.MarkHealthy("health-service", "initialised")
 
 	return svc
 }
@@ -77,10 +82,10 @@ func (s *Service) Metrics() *prometheus.Registry {
 }
 
 func (s *Service) Health() HealthResponse {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
+	s.componentsLock.RLock()
+	defer s.componentsLock.RUnlock()
 
-	components := make(map[string]string)
+	components := make(map[string]string, len(s.components))
 	status := HealthResponseStatusOk
 	for _, comp := range s.components {
 		if comp.healthy {
@@ -91,8 +96,45 @@ func (s *Service) Health() HealthResponse {
 		}
 	}
 
+	if s.closed {
+		s.changeLock.Lock()
+		if s.closed {
+			s.change = make(chan struct{})
+			s.closed = false
+		}
+		s.changeLock.Unlock()
+	}
+
 	return HealthResponse{
 		Components: components,
 		Status:     status,
 	}
+}
+
+func (s *Service) HealthChanged() chan struct{} {
+	s.changeLock.RLock()
+	defer s.changeLock.RUnlock()
+
+	return s.change
+}
+
+func (s *Service) handleUpdate(comp component) {
+	logger := slog.With("service", "health", "component", comp.component)
+
+	logger.Debug("got health update",
+		"healthy", comp.healthy,
+		"status", comp.status)
+	s.componentsLock.Lock()
+	s.components[comp.component] = comp
+	s.componentsLock.Unlock()
+
+	if !s.closed {
+		s.changeLock.Lock()
+		if !s.closed {
+			close(s.change)
+		}
+		s.closed = true
+		s.changeLock.Unlock()
+	}
+	logger.Debug("processed health update")
 }
