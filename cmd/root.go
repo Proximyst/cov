@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 
+	"github.com/proximyst/cov/cmd/admin"
 	"github.com/proximyst/cov/cmd/migrate"
 	"github.com/proximyst/cov/cmd/server"
 	"github.com/proximyst/cov/pkg/infra/log"
@@ -27,6 +28,7 @@ All options can also be set via environment variables. The environment variable 
 			log.FlagLogJSON(),
 		},
 		Commands: []*cli.Command{
+			admin.New(),
 			migrate.New(),
 			server.New(),
 		},

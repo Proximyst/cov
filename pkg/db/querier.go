@@ -11,45 +11,76 @@ import (
 )
 
 type Querier interface {
-	// Gets a user by their email.
+	// Creates a new audit log event with the given type and data.
+	//
+	//  INSERT INTO audit_log_events (event_type, event_data)
+	//  VALUES ($1, $2)
+	//  RETURNING id
+	CreateAuditLogEvent(ctx context.Context, arg CreateAuditLogEventParams) (int64, error)
+	// Creates a new user with the given ID and username.
+	//
+	//  INSERT INTO users (id, username)
+	//  VALUES ($1, $2)
+	//  RETURNING id, username, created_at, updated_at
+	CreateUser(ctx context.Context, arg CreateUserParams) (*User, error)
+	// Creates a new user email with the given ID and email address.
+	//
+	//  INSERT INTO user_emails (id, email, verified, is_primary)
+	//  VALUES ($1, $2, $3, $4)
+	//  ON CONFLICT (id, email) DO UPDATE
+	//      SET
+	//          verified = excluded.verified,
+	//          is_primary = excluded.is_primary
+	CreateUserEmail(ctx context.Context, arg CreateUserEmailParams) error
+	// Creates a new user password with the given ID and password hash.
+	//
+	//  INSERT INTO user_passwords (id, password)
+	//  VALUES ($1, $2)
+	//  ON CONFLICT (id) DO UPDATE
+	//      SET password = excluded.password
+	CreateUserPassword(ctx context.Context, arg CreateUserPasswordParams) error
+	// Creates a new user role with the given ID and role name.
+	//
+	//  INSERT INTO user_roles (id, role)
+	//  VALUES ($1, $2)
+	//  ON CONFLICT (id, role) DO NOTHING
+	CreateUserRole(ctx context.Context, arg CreateUserRoleParams) error
+	// Deletes a user with the given ID.
+	//
+	//  DELETE FROM users
+	//  WHERE id = $1
+	DeleteUser(ctx context.Context, id pgtype.UUID) error
+	// Gets a user by their email. It does not need to be their primary email.
 	//
 	//  SELECT
-	//      id,
-	//      email,
-	//      username,
-	//      display_name,
-	//      password,
-	//      created_at,
-	//      updated_at
+	//      users.id,
+	//      users.username,
+	//      users.created_at,
+	//      users.updated_at
 	//  FROM users
-	//  WHERE email = $1
-	GetUserByEmail(ctx context.Context, db DBTX, email string) (*User, error)
+	//  INNER JOIN user_emails ON users.id = user_emails.id
+	//  WHERE user_emails.email = $1
+	GetUserByEmail(ctx context.Context, email string) (*User, error)
 	// Gets a user by their ID.
 	//
 	//  SELECT
-	//      id,
-	//      email,
-	//      username,
-	//      display_name,
-	//      password,
-	//      created_at,
-	//      updated_at
+	//      users.id,
+	//      users.username,
+	//      users.created_at,
+	//      users.updated_at
 	//  FROM users
-	//  WHERE id = $1
-	GetUserByID(ctx context.Context, db DBTX, id pgtype.UUID) (*User, error)
+	//  WHERE users.id = $1
+	GetUserByID(ctx context.Context, id pgtype.UUID) (*User, error)
 	// Gets a user by their username.
 	//
 	//  SELECT
-	//      id,
-	//      email,
-	//      username,
-	//      display_name,
-	//      password,
-	//      created_at,
-	//      updated_at
+	//      users.id,
+	//      users.username,
+	//      users.created_at,
+	//      users.updated_at
 	//  FROM users
-	//  WHERE username = $1
-	GetUserByUsername(ctx context.Context, db DBTX, username string) (*User, error)
+	//  WHERE users.username = $1
+	GetUserByUsername(ctx context.Context, username string) (*User, error)
 }
 
 var _ Querier = (*Queries)(nil)

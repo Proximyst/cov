@@ -5,17 +5,16 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
-	"os"
-	"os/signal"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/proximyst/cov/pkg/api/health"
 	"github.com/proximyst/cov/pkg/api/rest"
+	"github.com/proximyst/cov/pkg/db"
 )
 
-func run(ctx context.Context, healthAddr, restAddr string) error {
+func run(ctx context.Context, healthAddr, restAddr, dbConnString string) error {
 	metrics := prometheus.NewRegistry()
 	metrics.MustRegister(collectors.NewGoCollector())
 	metrics.MustRegister(collectors.NewBuildInfoCollector())
@@ -24,34 +23,28 @@ func run(ctx context.Context, healthAddr, restAddr string) error {
 		return 1
 	}))
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	ctx, cancelNotify := signal.NotifyContext(ctx, os.Interrupt)
-	defer cancelNotify()
-
 	failure := make(chan error)
-	go func() {
-		<-ctx.Done()
-		failure <- nil
-	}()
 
+	slog.Info("starting health server", "address", healthAddr)
 	healthSvc := health.NewService(ctx, metrics)
 	healthServer := newHttpServer(ctx, healthAddr, health.NewRouter(prometheus.ToTransactionalGatherer(metrics), healthSvc).Handler())
-	go func() {
-		failure <- healthServer.ListenAndServe()
-	}()
+	go func() { failure <- healthServer.ListenAndServe() }()
 
-	restServer := newHttpServer(ctx, restAddr, rest.NewRouter().Handler())
-	go func() {
-		failure <- restServer.ListenAndServe()
-	}()
-
-	err := <-failure
-	if errors.Is(err, http.ErrServerClosed) {
-		return nil
-	} else {
+	slog.Info("connecting to db")
+	pool, err := db.Connect(ctx, dbConnString)
+	if err != nil {
 		return err
 	}
+	defer pool.Close()
+
+	slog.Info("starting rest server", "address", restAddr)
+	restServer := newHttpServer(ctx, restAddr, rest.NewRouter().Handler())
+	go func() { failure <- restServer.ListenAndServe() }()
+
+	slog.Info("server started", "health-address", healthAddr, "rest-address", restAddr)
+	err = <-failure
+	slog.Info("server shutting down")
+	return err
 }
 
 func newHttpServer(ctx context.Context, addr string, handler http.Handler) *http.Server {

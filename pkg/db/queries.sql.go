@@ -11,40 +11,176 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT
-    id,
-    email,
-    username,
-    display_name,
-    password,
-    created_at,
-    updated_at
-FROM users
-WHERE email = $1
+const createAuditLogEvent = `-- name: CreateAuditLogEvent :one
+INSERT INTO audit_log_events (event_type, event_data)
+VALUES ($1, $2)
+RETURNING id
 `
 
-// Gets a user by their email.
+type CreateAuditLogEventParams struct {
+	EventType string            `db:"event_type" json:"event_type"`
+	EventData AuditLogEventData `db:"event_data" json:"event_data"`
+}
+
+// Creates a new audit log event with the given type and data.
 //
-//	SELECT
-//	    id,
-//	    email,
-//	    username,
-//	    display_name,
-//	    password,
-//	    created_at,
-//	    updated_at
-//	FROM users
-//	WHERE email = $1
-func (q *Queries) GetUserByEmail(ctx context.Context, db DBTX, email string) (*User, error) {
-	row := db.QueryRow(ctx, getUserByEmail, email)
+//	INSERT INTO audit_log_events (event_type, event_data)
+//	VALUES ($1, $2)
+//	RETURNING id
+func (q *Queries) CreateAuditLogEvent(ctx context.Context, arg CreateAuditLogEventParams) (int64, error) {
+	row := q.db.QueryRow(ctx, createAuditLogEvent, arg.EventType, arg.EventData)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
+const createUser = `-- name: CreateUser :one
+INSERT INTO users (id, username)
+VALUES ($1, $2)
+RETURNING id, username, created_at, updated_at
+`
+
+type CreateUserParams struct {
+	ID       pgtype.UUID `db:"id" json:"id"`
+	Username string      `db:"username" json:"username"`
+}
+
+// Creates a new user with the given ID and username.
+//
+//	INSERT INTO users (id, username)
+//	VALUES ($1, $2)
+//	RETURNING id, username, created_at, updated_at
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (*User, error) {
+	row := q.db.QueryRow(ctx, createUser, arg.ID, arg.Username)
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.Email,
 		&i.Username,
-		&i.DisplayName,
-		&i.Password,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return &i, err
+}
+
+const createUserEmail = `-- name: CreateUserEmail :exec
+INSERT INTO user_emails (id, email, verified, is_primary)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (id, email) DO UPDATE
+    SET
+        verified = excluded.verified,
+        is_primary = excluded.is_primary
+`
+
+type CreateUserEmailParams struct {
+	ID        pgtype.UUID `db:"id" json:"id"`
+	Email     string      `db:"email" json:"email"`
+	Verified  bool        `db:"verified" json:"verified"`
+	IsPrimary bool        `db:"is_primary" json:"is_primary"`
+}
+
+// Creates a new user email with the given ID and email address.
+//
+//	INSERT INTO user_emails (id, email, verified, is_primary)
+//	VALUES ($1, $2, $3, $4)
+//	ON CONFLICT (id, email) DO UPDATE
+//	    SET
+//	        verified = excluded.verified,
+//	        is_primary = excluded.is_primary
+func (q *Queries) CreateUserEmail(ctx context.Context, arg CreateUserEmailParams) error {
+	_, err := q.db.Exec(ctx, createUserEmail,
+		arg.ID,
+		arg.Email,
+		arg.Verified,
+		arg.IsPrimary,
+	)
+	return err
+}
+
+const createUserPassword = `-- name: CreateUserPassword :exec
+INSERT INTO user_passwords (id, password)
+VALUES ($1, $2)
+ON CONFLICT (id) DO UPDATE
+    SET password = excluded.password
+`
+
+type CreateUserPasswordParams struct {
+	ID       pgtype.UUID `db:"id" json:"id"`
+	Password string      `db:"password" json:"password"`
+}
+
+// Creates a new user password with the given ID and password hash.
+//
+//	INSERT INTO user_passwords (id, password)
+//	VALUES ($1, $2)
+//	ON CONFLICT (id) DO UPDATE
+//	    SET password = excluded.password
+func (q *Queries) CreateUserPassword(ctx context.Context, arg CreateUserPasswordParams) error {
+	_, err := q.db.Exec(ctx, createUserPassword, arg.ID, arg.Password)
+	return err
+}
+
+const createUserRole = `-- name: CreateUserRole :exec
+INSERT INTO user_roles (id, role)
+VALUES ($1, $2)
+ON CONFLICT (id, role) DO NOTHING
+`
+
+type CreateUserRoleParams struct {
+	ID   pgtype.UUID `db:"id" json:"id"`
+	Role string      `db:"role" json:"role"`
+}
+
+// Creates a new user role with the given ID and role name.
+//
+//	INSERT INTO user_roles (id, role)
+//	VALUES ($1, $2)
+//	ON CONFLICT (id, role) DO NOTHING
+func (q *Queries) CreateUserRole(ctx context.Context, arg CreateUserRoleParams) error {
+	_, err := q.db.Exec(ctx, createUserRole, arg.ID, arg.Role)
+	return err
+}
+
+const deleteUser = `-- name: DeleteUser :exec
+DELETE FROM users
+WHERE id = $1
+`
+
+// Deletes a user with the given ID.
+//
+//	DELETE FROM users
+//	WHERE id = $1
+func (q *Queries) DeleteUser(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteUser, id)
+	return err
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT
+    users.id,
+    users.username,
+    users.created_at,
+    users.updated_at
+FROM users
+INNER JOIN user_emails ON users.id = user_emails.id
+WHERE user_emails.email = $1
+`
+
+// Gets a user by their email. It does not need to be their primary email.
+//
+//	SELECT
+//	    users.id,
+//	    users.username,
+//	    users.created_at,
+//	    users.updated_at
+//	FROM users
+//	INNER JOIN user_emails ON users.id = user_emails.id
+//	WHERE user_emails.email = $1
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (*User, error) {
+	row := q.db.QueryRow(ctx, getUserByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -53,38 +189,29 @@ func (q *Queries) GetUserByEmail(ctx context.Context, db DBTX, email string) (*U
 
 const getUserByID = `-- name: GetUserByID :one
 SELECT
-    id,
-    email,
-    username,
-    display_name,
-    password,
-    created_at,
-    updated_at
+    users.id,
+    users.username,
+    users.created_at,
+    users.updated_at
 FROM users
-WHERE id = $1
+WHERE users.id = $1
 `
 
 // Gets a user by their ID.
 //
 //	SELECT
-//	    id,
-//	    email,
-//	    username,
-//	    display_name,
-//	    password,
-//	    created_at,
-//	    updated_at
+//	    users.id,
+//	    users.username,
+//	    users.created_at,
+//	    users.updated_at
 //	FROM users
-//	WHERE id = $1
-func (q *Queries) GetUserByID(ctx context.Context, db DBTX, id pgtype.UUID) (*User, error) {
-	row := db.QueryRow(ctx, getUserByID, id)
+//	WHERE users.id = $1
+func (q *Queries) GetUserByID(ctx context.Context, id pgtype.UUID) (*User, error) {
+	row := q.db.QueryRow(ctx, getUserByID, id)
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.Email,
 		&i.Username,
-		&i.DisplayName,
-		&i.Password,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -93,38 +220,29 @@ func (q *Queries) GetUserByID(ctx context.Context, db DBTX, id pgtype.UUID) (*Us
 
 const getUserByUsername = `-- name: GetUserByUsername :one
 SELECT
-    id,
-    email,
-    username,
-    display_name,
-    password,
-    created_at,
-    updated_at
+    users.id,
+    users.username,
+    users.created_at,
+    users.updated_at
 FROM users
-WHERE username = $1
+WHERE users.username = $1
 `
 
 // Gets a user by their username.
 //
 //	SELECT
-//	    id,
-//	    email,
-//	    username,
-//	    display_name,
-//	    password,
-//	    created_at,
-//	    updated_at
+//	    users.id,
+//	    users.username,
+//	    users.created_at,
+//	    users.updated_at
 //	FROM users
-//	WHERE username = $1
-func (q *Queries) GetUserByUsername(ctx context.Context, db DBTX, username string) (*User, error) {
-	row := db.QueryRow(ctx, getUserByUsername, username)
+//	WHERE users.username = $1
+func (q *Queries) GetUserByUsername(ctx context.Context, username string) (*User, error) {
+	row := q.db.QueryRow(ctx, getUserByUsername, username)
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.Email,
 		&i.Username,
-		&i.DisplayName,
-		&i.Password,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

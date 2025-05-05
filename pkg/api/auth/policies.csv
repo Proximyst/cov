@@ -1,0 +1,9 @@
+# The policies are all in the format of:
+# p, $role, $path, $action
+# The action is usually just the HTTP method.
+# * acts as a wildcard: all actions are permitted.
+p, superadmin, /*, *
+
+p, user, /api/v1/logout, *
+
+p, anonymous, /api/v1/login, *

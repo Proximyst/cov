@@ -29,10 +29,9 @@ run *ARGS: build
     ./cov {{ARGS}}
 
 # Create and ready a development database. Assumes user-level access to Docker (or an alias to podman) exists.
-dev-db:
+dev-db: && (run "migrate")
     docker compose down --volumes || true
     docker compose up -d --wait
-    just run migrate
 
 # Set up a Git pre-commit hook to run (fast) linters before committing.
 # This is a one-time setup step.
