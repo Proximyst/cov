@@ -23,7 +23,7 @@ func TestOpenAPIEndpoints(t *testing.T) {
 		router := rest.NewRouter()
 
 		recorder := httptest.NewRecorder()
-		router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "GET", "/openapi.json", nil))
+		router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "GET", "/api/openapi.json", nil))
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, "application/json; charset=utf-8", recorder.Header().Get("Content-Type"))
@@ -39,7 +39,7 @@ func TestOpenAPIEndpoints(t *testing.T) {
 		router := rest.NewRouter()
 
 		recorder := httptest.NewRecorder()
-		router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "GET", "/openapi.yaml", nil))
+		router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "GET", "/api/openapi.yaml", nil))
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, "application/yaml; charset=utf-8", recorder.Header().Get("Content-Type"))

@@ -26,7 +26,7 @@ func TestOpenAPIEndpoints(t *testing.T) {
 		router := health.NewRouter(prometheus.ToTransactionalGatherer(registry), svc)
 
 		recorder := httptest.NewRecorder()
-		router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "GET", "/openapi.json", nil))
+		router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "GET", "/api/openapi.json", nil))
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, "application/json; charset=utf-8", recorder.Header().Get("Content-Type"))
@@ -44,7 +44,7 @@ func TestOpenAPIEndpoints(t *testing.T) {
 		router := health.NewRouter(prometheus.ToTransactionalGatherer(registry), svc)
 
 		recorder := httptest.NewRecorder()
-		router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "GET", "/openapi.yaml", nil))
+		router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "GET", "/api/openapi.yaml", nil))
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, "application/yaml; charset=utf-8", recorder.Header().Get("Content-Type"))
@@ -73,7 +73,7 @@ func TestMetricsEndpoint(t *testing.T) {
 	router := health.NewRouter(prometheus.ToTransactionalGatherer(registry), svc)
 
 	recorder := httptest.NewRecorder()
-	router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "GET", "/metrics", nil))
+	router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "GET", "/api/metrics", nil))
 
 	assert.Equal(t, http.StatusOK, recorder.Code)
 	assert.Equal(t, "text/plain; charset=utf-8", recorder.Header().Get("Content-Type"))
@@ -95,7 +95,7 @@ func TestHealthzEndpoint(t *testing.T) {
 		router := health.NewRouter(prometheus.ToTransactionalGatherer(registry), svc)
 
 		recorder := httptest.NewRecorder()
-		router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "GET", "/healthz", nil))
+		router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "GET", "/api/healthz", nil))
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, "application/json; charset=utf-8", recorder.Header().Get("Content-Type"))
@@ -119,7 +119,7 @@ func TestHealthzEndpoint(t *testing.T) {
 		router := health.NewRouter(prometheus.ToTransactionalGatherer(registry), svc)
 
 		recorder := httptest.NewRecorder()
-		router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "GET", "/healthz", nil))
+		router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "GET", "/api/healthz", nil))
 
 		assert.Equal(t, http.StatusServiceUnavailable, recorder.Code)
 		assert.Equal(t, "application/json; charset=utf-8", recorder.Header().Get("Content-Type"))
