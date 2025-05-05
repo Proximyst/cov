@@ -132,3 +132,61 @@ func TestHealthzEndpoint(t *testing.T) {
 		assert.Contains(t, body.Components, "test-service", "expected test-service to be present")
 	})
 }
+
+func TestErrorsReturnJSON(t *testing.T) {
+	t.Parallel()
+	gin.SetMode(gin.TestMode)
+
+	registry := prometheus.NewRegistry()
+	svc := health.NewService(t.Context(), registry)
+	router := health.NewRouter(prometheus.ToTransactionalGatherer(registry), svc)
+
+	router.GET("/test-panic", func(ctx *gin.Context) {
+		panic("test panic")
+	})
+
+	t.Run("recovery middleware", func(t *testing.T) {
+		t.Parallel()
+
+		recorder := httptest.NewRecorder()
+		router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "GET", "/test-panic", nil))
+
+		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+		assert.Equal(t, "application/json; charset=utf-8", recorder.Header().Get("Content-Type"))
+
+		var body health.ErrorResponse
+		err := json.Unmarshal(recorder.Body.Bytes(), &body)
+		require.NoError(t, err, "failed to unmarshal error response")
+		assert.Equal(t, health.ErrorResponseErrorInternalServerError, body.Error, "expected error response to be internal server error")
+	})
+
+	t.Run("no route", func(t *testing.T) {
+		t.Parallel()
+
+		recorder := httptest.NewRecorder()
+		router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "GET", "/this-path-doesnt-exist", nil))
+
+		assert.Equal(t, http.StatusNotFound, recorder.Code)
+		assert.Equal(t, "application/json; charset=utf-8", recorder.Header().Get("Content-Type"))
+
+		var body health.ErrorResponse
+		err := json.Unmarshal(recorder.Body.Bytes(), &body)
+		require.NoError(t, err, "failed to unmarshal error response")
+		assert.Equal(t, health.ErrorResponseErrorNotFound, body.Error, "expected error response to be internal server error")
+	})
+
+	t.Run("method not allowed", func(t *testing.T) {
+		t.Parallel()
+
+		recorder := httptest.NewRecorder()
+		router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "POST", "/test-panic", nil))
+
+		assert.Equal(t, http.StatusMethodNotAllowed, recorder.Code)
+		assert.Equal(t, "application/json; charset=utf-8", recorder.Header().Get("Content-Type"))
+
+		var body health.ErrorResponse
+		err := json.Unmarshal(recorder.Body.Bytes(), &body)
+		require.NoError(t, err, "failed to unmarshal error response")
+		assert.Equal(t, health.ErrorResponseErrorMethodNotAllowed, body.Error, "expected error response to be internal server error")
+	})
+}
