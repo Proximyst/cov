@@ -11,6 +11,9 @@ sql:
         emit_interface: true
         emit_json_tags: true
         emit_result_struct_pointers: true
-        emit_methods_with_db_argument: true
         emit_pointers_for_null_types: true
         emit_sql_as_comment: true
+        overrides:
+          - column: audit_log_events.event_data
+            go_type:
+              type: AuditLogEventData

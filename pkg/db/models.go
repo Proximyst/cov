@@ -8,6 +8,13 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AuditLogEvent struct {
+	ID        int64              `db:"id" json:"id"`
+	EventType string             `db:"event_type" json:"event_type"`
+	EventData AuditLogEventData  `db:"event_data" json:"event_data"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+}
+
 type Organisation struct {
 	ID        pgtype.UUID        `db:"id" json:"id"`
 	Service   string             `db:"service" json:"service"`
@@ -58,31 +65,28 @@ type Repository struct {
 }
 
 type User struct {
-	ID          pgtype.UUID        `db:"id" json:"id"`
-	Email       string             `db:"email" json:"email"`
-	Username    string             `db:"username" json:"username"`
-	DisplayName string             `db:"display_name" json:"display_name"`
-	Password    string             `db:"password" json:"password"`
-	CreatedAt   pgtype.Timestamptz `db:"created_at" json:"created_at"`
-	UpdatedAt   pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	ID        pgtype.UUID        `db:"id" json:"id"`
+	Username  string             `db:"username" json:"username"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 }
 
-type UserOauth2 struct {
-	UserID            pgtype.UUID        `db:"user_id" json:"user_id"`
-	Service           string             `db:"service" json:"service"`
-	ServiceID         string             `db:"service_id" json:"service_id"`
-	AccessToken       string             `db:"access_token" json:"access_token"`
-	AccessTokenNonce  string             `db:"access_token_nonce" json:"access_token_nonce"`
-	RefreshToken      string             `db:"refresh_token" json:"refresh_token"`
-	RefreshTokenNonce string             `db:"refresh_token_nonce" json:"refresh_token_nonce"`
-	Expiry            pgtype.Timestamptz `db:"expiry" json:"expiry"`
-	CreatedAt         pgtype.Timestamptz `db:"created_at" json:"created_at"`
+type UserEmail struct {
+	ID        pgtype.UUID        `db:"id" json:"id"`
+	Email     string             `db:"email" json:"email"`
+	Verified  bool               `db:"verified" json:"verified"`
+	IsPrimary bool               `db:"is_primary" json:"is_primary"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 }
 
-type UserToken struct {
-	ID          pgtype.UUID        `db:"id" json:"id"`
-	UserID      pgtype.UUID        `db:"user_id" json:"user_id"`
-	AccessToken string             `db:"access_token" json:"access_token"`
-	Expiry      pgtype.Timestamptz `db:"expiry" json:"expiry"`
-	CreatedAt   pgtype.Timestamptz `db:"created_at" json:"created_at"`
+type UserPassword struct {
+	ID        pgtype.UUID        `db:"id" json:"id"`
+	Password  string             `db:"password" json:"password"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+}
+
+type UserRole struct {
+	ID        pgtype.UUID        `db:"id" json:"id"`
+	Role      string             `db:"role" json:"role"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 }

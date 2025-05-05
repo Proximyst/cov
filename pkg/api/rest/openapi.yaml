@@ -81,6 +81,61 @@ paths:
       responses:
         '204':
           description: Server is alive
+  /api/v1/login:
+    post:
+      summary: Login to an account
+      description: Login to an account and return a session token.
+      operationId: login
+      tags:
+        - v1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  description: The username of the account.
+                password:
+                  type: string
+                  description: The password of the account.
+              required:
+                - username
+                - password
+      responses:
+        '204':
+          description: Successfully logged in
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/logout:
+    get:
+      summary: Log out of an account
+      description: Log out of an account and invalidate the session token.
+      operationId: logout
+      tags:
+        - v1
+      parameters:
+        - name: session
+          in: cookie
+          required: true
+          description: The session token to invalidate.
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Successfully logged out
+        '401':
+          description: Unauthorized, the token might be invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/v0/parse-report:
     post:
       summary: Parse a code coverage report
@@ -125,6 +180,8 @@ components:
             - NotFound
             - MethodNotAllowed
             - ReportInvalid
+            - InvalidBody
+            - InvalidCredentials
           description: Error code, only somewhat human-readable
           example: InternalServerError
         description:

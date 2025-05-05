@@ -4,12 +4,18 @@
 package rest
 
 import (
+	"fmt"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
+	"github.com/oapi-codegen/runtime"
 )
 
 // Defines values for ErrorResponseError.
 const (
 	ErrorResponseErrorInternalServerError ErrorResponseError = "InternalServerError"
+	ErrorResponseErrorInvalidBody         ErrorResponseError = "InvalidBody"
+	ErrorResponseErrorInvalidCredentials  ErrorResponseError = "InvalidCredentials"
 	ErrorResponseErrorMethodNotAllowed    ErrorResponseError = "MethodNotAllowed"
 	ErrorResponseErrorNotFound            ErrorResponseError = "NotFound"
 	ErrorResponseErrorReportInvalid       ErrorResponseError = "ReportInvalid"
@@ -30,8 +36,26 @@ type ErrorResponseError string
 // ParseReportTextBody defines parameters for ParseReport.
 type ParseReportTextBody = string
 
+// LoginJSONBody defines parameters for Login.
+type LoginJSONBody struct {
+	// Password The password of the account.
+	Password string `json:"password"`
+
+	// Username The username of the account.
+	Username string `json:"username"`
+}
+
+// LogoutParams defines parameters for Logout.
+type LogoutParams struct {
+	// Session The session token to invalidate.
+	Session string `form:"session" json:"session"`
+}
+
 // ParseReportTextRequestBody defines body for ParseReport for text/plain ContentType.
 type ParseReportTextRequestBody = ParseReportTextBody
+
+// LoginJSONRequestBody defines body for Login for application/json ContentType.
+type LoginJSONRequestBody LoginJSONBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -50,6 +74,12 @@ type ServerInterface interface {
 	// Parse a code coverage report
 	// (POST /api/v0/parse-report)
 	ParseReport(c *gin.Context)
+	// Login to an account
+	// (POST /api/v1/login)
+	Login(c *gin.Context)
+	// Log out of an account
+	// (GET /api/v1/logout)
+	Logout(c *gin.Context, params LogoutParams)
 	// Ping the server
 	// (GET /api/v1/ping)
 	Ping(c *gin.Context)
@@ -129,6 +159,55 @@ func (siw *ServerInterfaceWrapper) ParseReport(c *gin.Context) {
 	siw.Handler.ParseReport(c)
 }
 
+// Login operation middleware
+func (siw *ServerInterfaceWrapper) Login(c *gin.Context) {
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.Login(c)
+}
+
+// Logout operation middleware
+func (siw *ServerInterfaceWrapper) Logout(c *gin.Context) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params LogoutParams
+
+	{
+		var cookie string
+
+		if cookie, err = c.Cookie("session"); err == nil {
+			var value string
+			err = runtime.BindStyledParameterWithOptions("simple", "session", cookie, &value, runtime.BindStyledParameterOptions{Explode: true, Required: true})
+			if err != nil {
+				siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter session: %w", err), http.StatusBadRequest)
+				return
+			}
+			params.Session = value
+
+		} else {
+			siw.ErrorHandler(c, fmt.Errorf("Query argument session is required, but not found"), http.StatusBadRequest)
+			return
+		}
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.Logout(c, params)
+}
+
 // Ping operation middleware
 func (siw *ServerInterfaceWrapper) Ping(c *gin.Context) {
 
@@ -174,5 +253,7 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 	router.GET(options.BaseURL+"/api/redoc", wrapper.Redoc)
 	router.GET(options.BaseURL+"/api/scalar", wrapper.Scalar)
 	router.POST(options.BaseURL+"/api/v0/parse-report", wrapper.ParseReport)
+	router.POST(options.BaseURL+"/api/v1/login", wrapper.Login)
+	router.GET(options.BaseURL+"/api/v1/logout", wrapper.Logout)
 	router.GET(options.BaseURL+"/api/v1/ping", wrapper.Ping)
 }

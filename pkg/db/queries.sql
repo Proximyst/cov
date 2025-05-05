@@ -1,38 +1,69 @@
+-- name: CreateAuditLogEvent :one
+-- Creates a new audit log event with the given type and data.
+INSERT INTO audit_log_events (event_type, event_data)
+VALUES ($1, $2)
+RETURNING id;
+
+-- name: CreateUser :one
+-- Creates a new user with the given ID and username.
+INSERT INTO users (id, username)
+VALUES ($1, $2)
+RETURNING id, username, created_at, updated_at;
+
+-- name: CreateUserEmail :exec
+-- Creates a new user email with the given ID and email address.
+INSERT INTO user_emails (id, email, verified, is_primary)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (id, email) DO UPDATE
+    SET
+        verified = excluded.verified,
+        is_primary = excluded.is_primary;
+
+-- name: CreateUserPassword :exec
+-- Creates a new user password with the given ID and password hash.
+INSERT INTO user_passwords (id, password)
+VALUES ($1, $2)
+ON CONFLICT (id) DO UPDATE
+    SET password = excluded.password;
+
+-- name: CreateUserRole :exec
+-- Creates a new user role with the given ID and role name.
+INSERT INTO user_roles (id, role)
+VALUES ($1, $2)
+ON CONFLICT (id, role) DO NOTHING;
+
+-- name: DeleteUser :exec
+-- Deletes a user with the given ID.
+DELETE FROM users
+WHERE id = $1;
+
 -- name: GetUserByID :one
 -- Gets a user by their ID.
 SELECT
-    id,
-    email,
-    username,
-    display_name,
-    password,
-    created_at,
-    updated_at
+    users.id,
+    users.username,
+    users.created_at,
+    users.updated_at
 FROM users
-WHERE id = $1;
+WHERE users.id = $1;
 
 -- name: GetUserByEmail :one
--- Gets a user by their email.
+-- Gets a user by their email. It does not need to be their primary email.
 SELECT
-    id,
-    email,
-    username,
-    display_name,
-    password,
-    created_at,
-    updated_at
+    users.id,
+    users.username,
+    users.created_at,
+    users.updated_at
 FROM users
-WHERE email = $1;
+INNER JOIN user_emails ON users.id = user_emails.id
+WHERE user_emails.email = $1;
 
 -- name: GetUserByUsername :one
 -- Gets a user by their username.
 SELECT
-    id,
-    email,
-    username,
-    display_name,
-    password,
-    created_at,
-    updated_at
+    users.id,
+    users.username,
+    users.created_at,
+    users.updated_at
 FROM users
-WHERE username = $1;
+WHERE users.username = $1;

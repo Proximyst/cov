@@ -23,7 +23,7 @@ func TestMigrate(t *testing.T) {
 	require.NoError(t, err, "failed to run migrate command")
 
 	// Check if the migrations were applied
-	_, err = db.New().GetUserByUsername(t.Context(), pool, "this username does not exist")
+	_, err = db.New(pool).GetUserByUsername(t.Context(), "this username does not exist")
 	// We expect the error to be ErrNoRows, rather than some other DB error (such as "role not found").
 	// When this is the case, the query is correct and table exists but it's just empty, which is totally fine.
 	require.ErrorIs(t, err, pgx.ErrNoRows, "expected no user found")
