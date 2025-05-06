@@ -5,6 +5,7 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/golang-migrate/migrate/v4"
 	pgxdriver "github.com/golang-migrate/migrate/v4/database/pgx/v5"
@@ -53,8 +54,26 @@ func ExecuteMigrations(ctx context.Context, migrations source.Driver, db *pgxpoo
 		}
 	}()
 
+	mig.Log = &migrationLogger{
+		logger:  slog.Default().With("component", "db-migration"),
+		verbose: false,
+	}
+
 	if err := mig.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 	return ctx.Err()
+}
+
+type migrationLogger struct {
+	logger  *slog.Logger
+	verbose bool
+}
+
+func (l *migrationLogger) Printf(format string, v ...any) {
+	l.logger.Info(fmt.Sprintf(format, v...))
+}
+
+func (l *migrationLogger) Verbose() bool {
+	return l.verbose
 }

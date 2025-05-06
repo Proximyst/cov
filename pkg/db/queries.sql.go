@@ -140,6 +140,36 @@ func (q *Queries) CreateUserRole(ctx context.Context, arg CreateUserRoleParams) 
 	return err
 }
 
+const createUserSession = `-- name: CreateUserSession :one
+INSERT INTO user_sessions (id, session_token, expiry)
+VALUES ($1, $2, $3)
+RETURNING id, session_token, expiry
+`
+
+type CreateUserSessionParams struct {
+	ID           pgtype.UUID        `db:"id" json:"id"`
+	SessionToken string             `db:"session_token" json:"session_token"`
+	Expiry       pgtype.Timestamptz `db:"expiry" json:"expiry"`
+}
+
+type CreateUserSessionRow struct {
+	ID           pgtype.UUID        `db:"id" json:"id"`
+	SessionToken string             `db:"session_token" json:"session_token"`
+	Expiry       pgtype.Timestamptz `db:"expiry" json:"expiry"`
+}
+
+// Creates a new user session with the given ID and session token.
+//
+//	INSERT INTO user_sessions (id, session_token, expiry)
+//	VALUES ($1, $2, $3)
+//	RETURNING id, session_token, expiry
+func (q *Queries) CreateUserSession(ctx context.Context, arg CreateUserSessionParams) (*CreateUserSessionRow, error) {
+	row := q.db.QueryRow(ctx, createUserSession, arg.ID, arg.SessionToken, arg.Expiry)
+	var i CreateUserSessionRow
+	err := row.Scan(&i.ID, &i.SessionToken, &i.Expiry)
+	return &i, err
+}
+
 const deleteUser = `-- name: DeleteUser :exec
 DELETE FROM users
 WHERE id = $1
@@ -152,39 +182,6 @@ WHERE id = $1
 func (q *Queries) DeleteUser(ctx context.Context, id pgtype.UUID) error {
 	_, err := q.db.Exec(ctx, deleteUser, id)
 	return err
-}
-
-const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT
-    users.id,
-    users.username,
-    users.created_at,
-    users.updated_at
-FROM users
-INNER JOIN user_emails ON users.id = user_emails.id
-WHERE user_emails.email = $1
-`
-
-// Gets a user by their email. It does not need to be their primary email.
-//
-//	SELECT
-//	    users.id,
-//	    users.username,
-//	    users.created_at,
-//	    users.updated_at
-//	FROM users
-//	INNER JOIN user_emails ON users.id = user_emails.id
-//	WHERE user_emails.email = $1
-func (q *Queries) GetUserByEmail(ctx context.Context, email string) (*User, error) {
-	row := q.db.QueryRow(ctx, getUserByEmail, email)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Username,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return &i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
@@ -218,6 +215,42 @@ func (q *Queries) GetUserByID(ctx context.Context, id pgtype.UUID) (*User, error
 	return &i, err
 }
 
+const getUserByToken = `-- name: GetUserByToken :one
+SELECT
+    users.id,
+    users.username,
+    ARRAY_AGG(user_roles.role)::TEXT [] AS roles
+FROM user_sessions
+INNER JOIN users ON user_sessions.id = users.id
+INNER JOIN user_roles ON users.id = user_roles.id
+WHERE user_sessions.session_token = $1
+GROUP BY users.id, users.username
+`
+
+type GetUserByTokenRow struct {
+	ID       pgtype.UUID `db:"id" json:"id"`
+	Username string      `db:"username" json:"username"`
+	Roles    []string    `db:"roles" json:"roles"`
+}
+
+// Gets a user by one of their session tokens.
+//
+//	SELECT
+//	    users.id,
+//	    users.username,
+//	    ARRAY_AGG(user_roles.role)::TEXT [] AS roles
+//	FROM user_sessions
+//	INNER JOIN users ON user_sessions.id = users.id
+//	INNER JOIN user_roles ON users.id = user_roles.id
+//	WHERE user_sessions.session_token = $1
+//	GROUP BY users.id, users.username
+func (q *Queries) GetUserByToken(ctx context.Context, sessionToken string) (*GetUserByTokenRow, error) {
+	row := q.db.QueryRow(ctx, getUserByToken, sessionToken)
+	var i GetUserByTokenRow
+	err := row.Scan(&i.ID, &i.Username, &i.Roles)
+	return &i, err
+}
+
 const getUserByUsername = `-- name: GetUserByUsername :one
 SELECT
     users.id,
@@ -246,5 +279,34 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (*User
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
+	return &i, err
+}
+
+const getUserWithOptionalPasswordByUsername = `-- name: GetUserWithOptionalPasswordByUsername :one
+SELECT
+    users.id,
+    user_passwords.password
+FROM users
+LEFT JOIN user_passwords ON users.id = user_passwords.id
+WHERE users.username = $1
+`
+
+type GetUserWithOptionalPasswordByUsernameRow struct {
+	ID       pgtype.UUID `db:"id" json:"id"`
+	Password *string     `db:"password" json:"password"`
+}
+
+// Gets a user by their username, optionally including their password hash.
+//
+//	SELECT
+//	    users.id,
+//	    user_passwords.password
+//	FROM users
+//	LEFT JOIN user_passwords ON users.id = user_passwords.id
+//	WHERE users.username = $1
+func (q *Queries) GetUserWithOptionalPasswordByUsername(ctx context.Context, username string) (*GetUserWithOptionalPasswordByUsernameRow, error) {
+	row := q.db.QueryRow(ctx, getUserWithOptionalPasswordByUsername, username)
+	var i GetUserWithOptionalPasswordByUsernameRow
+	err := row.Scan(&i.ID, &i.Password)
 	return &i, err
 }

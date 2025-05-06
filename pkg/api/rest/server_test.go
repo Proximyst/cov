@@ -20,7 +20,8 @@ func TestOpenAPIEndpoints(t *testing.T) {
 	t.Run("json", func(t *testing.T) {
 		t.Parallel()
 
-		router := rest.NewRouter()
+		router, err := rest.NewRouter(nil)
+		require.NoError(t, err, "failed to create router")
 
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "GET", "/api/openapi.json", nil))
@@ -29,14 +30,15 @@ func TestOpenAPIEndpoints(t *testing.T) {
 		assert.Equal(t, "application/json; charset=utf-8", recorder.Header().Get("Content-Type"))
 
 		var body map[string]any
-		err := json.Unmarshal(recorder.Body.Bytes(), &body)
+		err = json.Unmarshal(recorder.Body.Bytes(), &body)
 		require.NoError(t, err, "failed to unmarshal OpenAPI JSON")
 	})
 
 	t.Run("yaml", func(t *testing.T) {
 		t.Parallel()
 
-		router := rest.NewRouter()
+		router, err := rest.NewRouter(nil)
+		require.NoError(t, err, "failed to create router")
 
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "GET", "/api/openapi.yaml", nil))
@@ -45,7 +47,7 @@ func TestOpenAPIEndpoints(t *testing.T) {
 		assert.Equal(t, "application/yaml; charset=utf-8", recorder.Header().Get("Content-Type"))
 
 		var body map[string]any
-		err := yaml.Unmarshal(recorder.Body.Bytes(), &body)
+		err = yaml.Unmarshal(recorder.Body.Bytes(), &body)
 		require.NoError(t, err, "failed to unmarshal OpenAPI YAML")
 	})
 }
@@ -54,7 +56,8 @@ func TestErrorsReturnJSON(t *testing.T) {
 	t.Parallel()
 	gin.SetMode(gin.TestMode)
 
-	router := rest.NewRouter()
+	router, err := rest.NewRouter(nil)
+	require.NoError(t, err, "failed to create router")
 
 	router.GET("/test-panic", func(ctx *gin.Context) {
 		panic("test panic")

@@ -90,3 +90,10 @@ type UserRole struct {
 	Role      string             `db:"role" json:"role"`
 	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 }
+
+type UserSession struct {
+	ID           pgtype.UUID        `db:"id" json:"id"`
+	SessionToken string             `db:"session_token" json:"session_token"`
+	Expiry       pgtype.Timestamptz `db:"expiry" json:"expiry"`
+	CreatedAt    pgtype.Timestamptz `db:"created_at" json:"created_at"`
+}

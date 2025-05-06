@@ -47,17 +47,6 @@ SELECT
 FROM users
 WHERE users.id = $1;
 
--- name: GetUserByEmail :one
--- Gets a user by their email. It does not need to be their primary email.
-SELECT
-    users.id,
-    users.username,
-    users.created_at,
-    users.updated_at
-FROM users
-INNER JOIN user_emails ON users.id = user_emails.id
-WHERE user_emails.email = $1;
-
 -- name: GetUserByUsername :one
 -- Gets a user by their username.
 SELECT
@@ -67,3 +56,30 @@ SELECT
     users.updated_at
 FROM users
 WHERE users.username = $1;
+
+-- name: GetUserByToken :one
+-- Gets a user by one of their session tokens.
+SELECT
+    users.id,
+    users.username,
+    ARRAY_AGG(user_roles.role)::TEXT [] AS roles
+FROM user_sessions
+INNER JOIN users ON user_sessions.id = users.id
+INNER JOIN user_roles ON users.id = user_roles.id
+WHERE user_sessions.session_token = $1
+GROUP BY users.id, users.username;
+
+-- name: GetUserWithOptionalPasswordByUsername :one
+-- Gets a user by their username, optionally including their password hash.
+SELECT
+    users.id,
+    user_passwords.password
+FROM users
+LEFT JOIN user_passwords ON users.id = user_passwords.id
+WHERE users.username = $1;
+
+-- name: CreateUserSession :one
+-- Creates a new user session with the given ID and session token.
+INSERT INTO user_sessions (id, session_token, expiry)
+VALUES ($1, $2, $3)
+RETURNING id, session_token, expiry;

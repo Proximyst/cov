@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/proximyst/cov/pkg/api/auth"
+	"github.com/proximyst/cov/pkg/auth"
 	"github.com/proximyst/cov/pkg/db"
 	"github.com/urfave/cli/v3"
 )

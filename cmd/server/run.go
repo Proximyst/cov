@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -33,12 +34,16 @@ func run(ctx context.Context, healthAddr, restAddr, dbConnString string) error {
 	slog.Info("connecting to db")
 	pool, err := db.Connect(ctx, dbConnString)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 	defer pool.Close()
 
 	slog.Info("starting rest server", "address", restAddr)
-	restServer := newHttpServer(ctx, restAddr, rest.NewRouter().Handler())
+	restRouter, err := rest.NewRouter(pool)
+	if err != nil {
+		return fmt.Errorf("failed to create rest router: %w", err)
+	}
+	restServer := newHttpServer(ctx, restAddr, restRouter.Handler())
 	go func() { failure <- restServer.ListenAndServe() }()
 
 	slog.Info("server started", "health-address", healthAddr, "rest-address", restAddr)

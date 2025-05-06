@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/proximyst/cov/pkg/db"
+	"github.com/proximyst/cov/pkg/db/pgutil"
 )
 
 func run(ctx context.Context, username, id string, dbConnString string) error {
@@ -38,7 +39,7 @@ func run(ctx context.Context, username, id string, dbConnString string) error {
 			return fmt.Errorf("failed to parse user ID: %w", err)
 		}
 
-		userID = pgtype.UUID{Bytes: id, Valid: true}
+		userID = pgutil.FromGoogleUUID(id)
 	} else {
 		usr, err := queries.GetUserByUsername(ctx, username)
 		if err != nil {
