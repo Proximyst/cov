@@ -1,0 +1,20 @@
+type: object
+description: A generic error response
+properties:
+  error:
+    type: string
+    enum:
+      - InternalServerError
+      - NotFound
+      - MethodNotAllowed
+      - ReportInvalid
+      - InvalidBody
+      - InvalidCredentials
+    description: Error code, only somewhat human-readable
+    example: InternalServerError
+  description:
+    type: string
+    description: Human-readable description of the error
+    example: Server panicked
+required:
+  - error
