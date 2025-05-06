@@ -4,6 +4,17 @@ INSERT INTO audit_log_events (event_type, event_data)
 VALUES ($1, $2)
 RETURNING id;
 
+-- name: GetAuditLogEvents :many
+-- Gets all audit log events in a page.
+SELECT
+    id,
+    event_type,
+    event_data,
+    created_at
+FROM audit_log_events
+ORDER BY id ASC
+LIMIT $1 OFFSET $2;
+
 -- name: CreateUser :one
 -- Creates a new user with the given ID and username.
 INSERT INTO users (id, username)
@@ -83,3 +94,15 @@ WHERE users.username = $1;
 INSERT INTO user_sessions (id, session_token, expiry)
 VALUES ($1, $2, $3)
 RETURNING id, session_token, expiry;
+
+-- name: GetUserEmails :many
+-- Gets all emails for a user with the given ID in a page.
+SELECT
+    user_emails.id,
+    user_emails.email,
+    user_emails.verified,
+    user_emails.is_primary
+FROM user_emails
+WHERE user_emails.id = $1
+ORDER BY user_emails.is_primary DESC, user_emails.email ASC
+LIMIT $2 OFFSET $3;

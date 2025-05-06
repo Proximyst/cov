@@ -184,6 +184,57 @@ func (q *Queries) DeleteUser(ctx context.Context, id pgtype.UUID) error {
 	return err
 }
 
+const getAuditLogEvents = `-- name: GetAuditLogEvents :many
+SELECT
+    id,
+    event_type,
+    event_data,
+    created_at
+FROM audit_log_events
+ORDER BY id ASC
+LIMIT $1 OFFSET $2
+`
+
+type GetAuditLogEventsParams struct {
+	Limit  int32 `db:"limit" json:"limit"`
+	Offset int32 `db:"offset" json:"offset"`
+}
+
+// Gets all audit log events in a page.
+//
+//	SELECT
+//	    id,
+//	    event_type,
+//	    event_data,
+//	    created_at
+//	FROM audit_log_events
+//	ORDER BY id ASC
+//	LIMIT $1 OFFSET $2
+func (q *Queries) GetAuditLogEvents(ctx context.Context, arg GetAuditLogEventsParams) ([]*AuditLogEvent, error) {
+	rows, err := q.db.Query(ctx, getAuditLogEvents, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*AuditLogEvent
+	for rows.Next() {
+		var i AuditLogEvent
+		if err := rows.Scan(
+			&i.ID,
+			&i.EventType,
+			&i.EventData,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUserByID = `-- name: GetUserByID :one
 SELECT
     users.id,
@@ -280,6 +331,67 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (*User
 		&i.UpdatedAt,
 	)
 	return &i, err
+}
+
+const getUserEmails = `-- name: GetUserEmails :many
+SELECT
+    user_emails.id,
+    user_emails.email,
+    user_emails.verified,
+    user_emails.is_primary
+FROM user_emails
+WHERE user_emails.id = $1
+ORDER BY user_emails.is_primary DESC, user_emails.email ASC
+LIMIT $2 OFFSET $3
+`
+
+type GetUserEmailsParams struct {
+	ID     pgtype.UUID `db:"id" json:"id"`
+	Limit  int32       `db:"limit" json:"limit"`
+	Offset int32       `db:"offset" json:"offset"`
+}
+
+type GetUserEmailsRow struct {
+	ID        pgtype.UUID `db:"id" json:"id"`
+	Email     string      `db:"email" json:"email"`
+	Verified  bool        `db:"verified" json:"verified"`
+	IsPrimary bool        `db:"is_primary" json:"is_primary"`
+}
+
+// Gets all emails for a user with the given ID in a page.
+//
+//	SELECT
+//	    user_emails.id,
+//	    user_emails.email,
+//	    user_emails.verified,
+//	    user_emails.is_primary
+//	FROM user_emails
+//	WHERE user_emails.id = $1
+//	ORDER BY user_emails.is_primary DESC, user_emails.email ASC
+//	LIMIT $2 OFFSET $3
+func (q *Queries) GetUserEmails(ctx context.Context, arg GetUserEmailsParams) ([]*GetUserEmailsRow, error) {
+	rows, err := q.db.Query(ctx, getUserEmails, arg.ID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*GetUserEmailsRow
+	for rows.Next() {
+		var i GetUserEmailsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Email,
+			&i.Verified,
+			&i.IsPrimary,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getUserWithOptionalPasswordByUsername = `-- name: GetUserWithOptionalPasswordByUsername :one

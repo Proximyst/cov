@@ -56,6 +56,17 @@ type Querier interface {
 	//  DELETE FROM users
 	//  WHERE id = $1
 	DeleteUser(ctx context.Context, id pgtype.UUID) error
+	// Gets all audit log events in a page.
+	//
+	//  SELECT
+	//      id,
+	//      event_type,
+	//      event_data,
+	//      created_at
+	//  FROM audit_log_events
+	//  ORDER BY id ASC
+	//  LIMIT $1 OFFSET $2
+	GetAuditLogEvents(ctx context.Context, arg GetAuditLogEventsParams) ([]*AuditLogEvent, error)
 	// Gets a user by their ID.
 	//
 	//  SELECT
@@ -88,6 +99,18 @@ type Querier interface {
 	//  FROM users
 	//  WHERE users.username = $1
 	GetUserByUsername(ctx context.Context, username string) (*User, error)
+	// Gets all emails for a user with the given ID in a page.
+	//
+	//  SELECT
+	//      user_emails.id,
+	//      user_emails.email,
+	//      user_emails.verified,
+	//      user_emails.is_primary
+	//  FROM user_emails
+	//  WHERE user_emails.id = $1
+	//  ORDER BY user_emails.is_primary DESC, user_emails.email ASC
+	//  LIMIT $2 OFFSET $3
+	GetUserEmails(ctx context.Context, arg GetUserEmailsParams) ([]*GetUserEmailsRow, error)
 	// Gets a user by their username, optionally including their password hash.
 	//
 	//  SELECT
