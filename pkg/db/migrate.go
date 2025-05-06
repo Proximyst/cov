@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/golang-migrate/migrate/v4"
 	pgxdriver "github.com/golang-migrate/migrate/v4/database/pgx/v5"
@@ -71,7 +72,7 @@ type migrationLogger struct {
 }
 
 func (l *migrationLogger) Printf(format string, v ...any) {
-	l.logger.Info(fmt.Sprintf(format, v...))
+	l.logger.Info(strings.TrimSpace(fmt.Sprintf(format, v...)))
 }
 
 func (l *migrationLogger) Verbose() bool {
