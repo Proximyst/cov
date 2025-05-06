@@ -10,8 +10,11 @@ import (
 // Defines values for ErrorResponseError.
 const (
 	ErrorResponseErrorInternalServerError ErrorResponseError = "InternalServerError"
+	ErrorResponseErrorInvalidBody         ErrorResponseError = "InvalidBody"
+	ErrorResponseErrorInvalidCredentials  ErrorResponseError = "InvalidCredentials"
 	ErrorResponseErrorMethodNotAllowed    ErrorResponseError = "MethodNotAllowed"
 	ErrorResponseErrorNotFound            ErrorResponseError = "NotFound"
+	ErrorResponseErrorReportInvalid       ErrorResponseError = "ReportInvalid"
 )
 
 // Defines values for HealthResponseStatus.

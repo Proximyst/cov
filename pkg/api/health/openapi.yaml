@@ -1,5 +1,7 @@
+# yaml-language-server: $schema=../openapi-schema.json
+
 # This file is human-written. It is used as a source to generate the gen.go and openapi.json files.
-# The latest source of this file is in: https://github.com/Proximyst/cov/blob/main/pkg/health/openapi.yaml
+# The latest source of this file is in: https://github.com/Proximyst/cov/blob/main/pkg/api/health.yaml
 
 openapi: '3.0.4'
 info:
@@ -108,23 +110,7 @@ paths:
 components:
   schemas:
     ErrorResponse:
-      type: object
-      description: A generic error response
-      properties:
-        error:
-          type: string
-          enum:
-            - InternalServerError
-            - NotFound
-            - MethodNotAllowed
-          description: Error code, only somewhat human-readable
-          example: InternalServerError
-        description:
-          type: string
-          description: Human-readable description of the error
-          example: Server panicked
-      required:
-        - error
+      $ref: ../ErrorResponse.yaml
     HealthResponse:
       type: object
       description: A response indicating the health of the service.

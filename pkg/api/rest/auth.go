@@ -34,7 +34,6 @@ func (s *server) Login(c *gin.Context) {
 		return
 	}
 
-	// TODO: implement login logic. return in a cookie.
 	usr, err := db.New(s.pool).GetUserWithOptionalPasswordByUsername(c, body.Username)
 	if err != nil || usr.Password == nil {
 		logger.Debug("user not found or has no password", "error", err)

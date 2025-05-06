@@ -1,0 +1,4 @@
+The openapi-schema.json is modified slightly (to be compatible with new yaml-language-server versions) from the official non-normative JSON schema.
+It is licensed under: https://www.apache.org/licenses/LICENSE-2.0.html
+
+Thanks go to the OpenAPI Initiative and their editors & contributors.
