@@ -1,7 +1,8 @@
-package health_test
+package obs_test
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,7 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-yaml"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/proximyst/cov/pkg/api/health"
+	"github.com/proximyst/cov/pkg/api/obs"
+	"github.com/proximyst/cov/pkg/health"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -21,9 +23,8 @@ func TestOpenAPIEndpoints(t *testing.T) {
 	t.Run("json", func(t *testing.T) {
 		t.Parallel()
 
-		registry := prometheus.NewRegistry()
-		svc := health.NewService(t.Context(), registry)
-		router := health.NewRouter(prometheus.ToTransactionalGatherer(registry), svc)
+		healthSvc := health.NewService(t.Context(), slog.Default())
+		router := obs.NewRouter(prometheus.ToTransactionalGatherer(prometheus.NewRegistry()), healthSvc)
 
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "GET", "/api/openapi.json", nil))
@@ -39,9 +40,8 @@ func TestOpenAPIEndpoints(t *testing.T) {
 	t.Run("yaml", func(t *testing.T) {
 		t.Parallel()
 
-		registry := prometheus.NewRegistry()
-		svc := health.NewService(t.Context(), registry)
-		router := health.NewRouter(prometheus.ToTransactionalGatherer(registry), svc)
+		healthSvc := health.NewService(t.Context(), slog.Default())
+		router := obs.NewRouter(prometheus.ToTransactionalGatherer(prometheus.NewRegistry()), healthSvc)
 
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "GET", "/api/openapi.yaml", nil))
@@ -69,8 +69,8 @@ func TestMetricsEndpoint(t *testing.T) {
 			return 1
 		}))
 
-	svc := health.NewService(t.Context(), registry)
-	router := health.NewRouter(prometheus.ToTransactionalGatherer(registry), svc)
+	healthSvc := health.NewService(t.Context(), slog.Default())
+	router := obs.NewRouter(prometheus.ToTransactionalGatherer(registry), healthSvc)
 
 	recorder := httptest.NewRecorder()
 	router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "GET", "/api/metrics", nil))
@@ -87,12 +87,11 @@ func TestHealthzEndpoint(t *testing.T) {
 	t.Run("healthy", func(t *testing.T) {
 		t.Parallel()
 
-		registry := prometheus.NewRegistry()
-		svc := health.NewService(t.Context(), registry)
-		changed := svc.HealthChanged()
-		svc.MarkHealthy("test-service", "test reason")
+		healthSvc := health.NewService(t.Context(), slog.Default())
+		changed := healthSvc.HealthChanged()
+		healthSvc.MarkHealthy("test-service", "test reason")
 		<-changed
-		router := health.NewRouter(prometheus.ToTransactionalGatherer(registry), svc)
+		router := obs.NewRouter(prometheus.ToTransactionalGatherer(prometheus.NewRegistry()), healthSvc)
 
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "GET", "/api/healthz", nil))
@@ -100,23 +99,22 @@ func TestHealthzEndpoint(t *testing.T) {
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, "application/json; charset=utf-8", recorder.Header().Get("Content-Type"))
 
-		var body health.HealthResponse
+		var body obs.HealthResponse
 		err := json.Unmarshal(recorder.Body.Bytes(), &body)
 		require.NoError(t, err, "failed to unmarshal health response")
 
-		assert.Equal(t, health.HealthResponseStatusOk, body.Status, "expected health response status to be ok")
+		assert.Equal(t, obs.HealthResponseStatusHealthy, body.Status, "expected health response status to be healthy")
 		assert.Contains(t, body.Components, "test-service", "expected test-service to be present")
 	})
 
 	t.Run("unhealthy", func(t *testing.T) {
 		t.Parallel()
 
-		registry := prometheus.NewRegistry()
-		svc := health.NewService(t.Context(), registry)
-		changed := svc.HealthChanged()
-		svc.MarkUnhealthy("test-service", "test reason")
+		healthSvc := health.NewService(t.Context(), slog.Default())
+		changed := healthSvc.HealthChanged()
+		healthSvc.MarkUnhealthy("test-service", "test reason")
 		<-changed
-		router := health.NewRouter(prometheus.ToTransactionalGatherer(registry), svc)
+		router := obs.NewRouter(prometheus.ToTransactionalGatherer(prometheus.NewRegistry()), healthSvc)
 
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, httptest.NewRequestWithContext(t.Context(), "GET", "/api/healthz", nil))
@@ -124,11 +122,11 @@ func TestHealthzEndpoint(t *testing.T) {
 		assert.Equal(t, http.StatusServiceUnavailable, recorder.Code)
 		assert.Equal(t, "application/json; charset=utf-8", recorder.Header().Get("Content-Type"))
 
-		var body health.HealthResponse
+		var body obs.HealthResponse
 		err := json.Unmarshal(recorder.Body.Bytes(), &body)
 		require.NoError(t, err, "failed to unmarshal health response")
 
-		assert.Equal(t, health.HealthResponseStatusError, body.Status, "expected health response status to be ok")
+		assert.Equal(t, obs.HealthResponseStatusUnhealthy, body.Status, "expected health response status to be unhealthy")
 		assert.Contains(t, body.Components, "test-service", "expected test-service to be present")
 	})
 }
@@ -137,9 +135,8 @@ func TestErrorsReturnJSON(t *testing.T) {
 	t.Parallel()
 	gin.SetMode(gin.TestMode)
 
-	registry := prometheus.NewRegistry()
-	svc := health.NewService(t.Context(), registry)
-	router := health.NewRouter(prometheus.ToTransactionalGatherer(registry), svc)
+	healthSvc := health.NewService(t.Context(), slog.Default())
+	router := obs.NewRouter(prometheus.ToTransactionalGatherer(prometheus.NewRegistry()), healthSvc)
 
 	router.GET("/test-panic", func(ctx *gin.Context) {
 		panic("test panic")
@@ -154,10 +151,10 @@ func TestErrorsReturnJSON(t *testing.T) {
 		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
 		assert.Equal(t, "application/json; charset=utf-8", recorder.Header().Get("Content-Type"))
 
-		var body health.ErrorResponse
+		var body obs.ErrorResponse
 		err := json.Unmarshal(recorder.Body.Bytes(), &body)
 		require.NoError(t, err, "failed to unmarshal error response")
-		assert.Equal(t, health.ErrorResponseErrorInternalServerError, body.Error, "expected error response to be internal server error")
+		assert.Equal(t, obs.ErrorResponseErrorInternalServerError, body.Error, "expected error response to be internal server error")
 	})
 
 	t.Run("no route", func(t *testing.T) {
@@ -169,10 +166,10 @@ func TestErrorsReturnJSON(t *testing.T) {
 		assert.Equal(t, http.StatusNotFound, recorder.Code)
 		assert.Equal(t, "application/json; charset=utf-8", recorder.Header().Get("Content-Type"))
 
-		var body health.ErrorResponse
+		var body obs.ErrorResponse
 		err := json.Unmarshal(recorder.Body.Bytes(), &body)
 		require.NoError(t, err, "failed to unmarshal error response")
-		assert.Equal(t, health.ErrorResponseErrorNotFound, body.Error, "expected error response to be internal server error")
+		assert.Equal(t, obs.ErrorResponseErrorNotFound, body.Error, "expected error response to be internal server error")
 	})
 
 	t.Run("method not allowed", func(t *testing.T) {
@@ -184,9 +181,9 @@ func TestErrorsReturnJSON(t *testing.T) {
 		assert.Equal(t, http.StatusMethodNotAllowed, recorder.Code)
 		assert.Equal(t, "application/json; charset=utf-8", recorder.Header().Get("Content-Type"))
 
-		var body health.ErrorResponse
+		var body obs.ErrorResponse
 		err := json.Unmarshal(recorder.Body.Bytes(), &body)
 		require.NoError(t, err, "failed to unmarshal error response")
-		assert.Equal(t, health.ErrorResponseErrorMethodNotAllowed, body.Error, "expected error response to be internal server error")
+		assert.Equal(t, obs.ErrorResponseErrorMethodNotAllowed, body.Error, "expected error response to be internal server error")
 	})
 }
