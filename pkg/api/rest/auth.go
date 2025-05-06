@@ -119,7 +119,7 @@ func (s *server) Login(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
-	c.SetCookie("session", sessionToken, int(time.Now().Sub(expiry).Seconds()), "/", "", false, true)
+	c.SetCookie("session", sessionToken, int(expiry.Sub(time.Now()).Seconds()), "/", "", false, true)
 	logger.Info("user logged in with new session")
 }
 
