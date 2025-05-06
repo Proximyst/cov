@@ -3,7 +3,7 @@ package auth_test
 import (
 	"testing"
 
-	"github.com/proximyst/cov/pkg/api/auth"
+	"github.com/proximyst/cov/pkg/auth"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -17,7 +17,7 @@ func TestEnforcer(t *testing.T) {
 		enforcer, err := auth.NewEnforcer()
 		require.NoError(t, err, "failed to create enforcer")
 
-		ok, err := enforcer.Enforce("superadmin", "/api/v1/admin", "GET")
+		ok, err := enforcer.Enforce([]auth.Role{auth.RoleSuperadmin}, "/api/v1/admin", "GET")
 		require.NoError(t, err, "failed to enforce policy")
 		assert.True(t, ok, "expected policy to be enforced")
 	})

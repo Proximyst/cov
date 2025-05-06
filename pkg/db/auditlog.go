@@ -1,11 +1,14 @@
 package db
 
+import "time"
+
 const (
 	AuditLogEventTypeUserInserted         = "user.inserted"
 	AuditLogEventTypeUserDeleted          = "user.deleted"
 	AuditLogEventTypeUserPasswordInserted = "user.password.inserted"
 	AuditLogEventTypeUserEmailInserted    = "user.email.inserted"
 	AuditLogEventTypeUserRoleInserted     = "user.role.inserted"
+	AuditLogEventTypeUserSessionInserted  = "user.session.inserted"
 )
 
 type AuditLogEventData struct {
@@ -18,6 +21,7 @@ type AuditLogEventData struct {
 	UserPasswordInserted *AuditLogUserPasswordInserted `json:"user_password_inserted,omitempty"`
 	UserEmailInserted    *AuditLogUserEmailInserted    `json:"user_email_inserted,omitempty"`
 	UserRoleInserted     *AuditLogUserRoleInserted     `json:"user_role_inserted,omitempty"`
+	UserSessionInserted  *AuditLogUserSessionInserted  `json:"user_session_inserted,omitempty"`
 }
 
 type AuditLogUserInserted struct {
@@ -43,4 +47,11 @@ type AuditLogUserEmailInserted struct {
 type AuditLogUserRoleInserted struct {
 	UserID string `json:"user_id"`
 	Role   string `json:"role"`
+}
+
+type AuditLogUserSessionInserted struct {
+	UserID string    `json:"user_id"`
+	Token  string    `json:"token"`
+	Expiry time.Time `json:"expiry"`
+	Method string    `json:"method"`
 }

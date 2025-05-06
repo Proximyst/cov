@@ -7,8 +7,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/proximyst/cov/pkg/api/auth"
+	"github.com/proximyst/cov/pkg/auth"
 	"github.com/proximyst/cov/pkg/db"
+	"github.com/proximyst/cov/pkg/db/pgutil"
 )
 
 func run(ctx context.Context,
@@ -64,7 +65,7 @@ func insertUser(ctx context.Context, q db.Querier, username string) (pgtype.UUID
 	}
 
 	usr, err := q.CreateUser(ctx, db.CreateUserParams{
-		ID:       pgtype.UUID{Bytes: userID, Valid: true},
+		ID:       pgutil.FromGoogleUUID(userID),
 		Username: username,
 	})
 	if err != nil {

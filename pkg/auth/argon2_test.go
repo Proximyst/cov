@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/matthewhartstonge/argon2"
-	"github.com/proximyst/cov/pkg/api/auth"
+	"github.com/proximyst/cov/pkg/auth"
 	"github.com/stretchr/testify/assert"
 )
 
