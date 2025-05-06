@@ -5,8 +5,8 @@
 
 openapi: '3.0.4'
 info:
-  title: cov Health API
-  description: The health API for cov.
+  title: cov Observability API
+  description: The observability API for cov.
   version: 0.1.0
 
 paths:
@@ -117,8 +117,8 @@ components:
       properties:
         status:
           type: string
-          enum: ["ok", "error"]
-          example: "ok"
+          enum: ["healthy", "unhealthy"]
+          example: "healthy"
           description: The overall health status of the service.
         components:
           type: object

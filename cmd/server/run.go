@@ -10,9 +10,10 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
-	"github.com/proximyst/cov/pkg/api/health"
+	"github.com/proximyst/cov/pkg/api/obs"
 	"github.com/proximyst/cov/pkg/api/rest"
 	"github.com/proximyst/cov/pkg/db"
+	"github.com/proximyst/cov/pkg/health"
 )
 
 func run(ctx context.Context, healthAddr, restAddr, dbConnString string) error {
@@ -27,8 +28,8 @@ func run(ctx context.Context, healthAddr, restAddr, dbConnString string) error {
 	failure := make(chan error)
 
 	slog.Info("starting health server", "address", healthAddr)
-	healthSvc := health.NewService(ctx, metrics)
-	healthServer := newHttpServer(ctx, healthAddr, health.NewRouter(prometheus.ToTransactionalGatherer(metrics), healthSvc).Handler())
+	healthSvc := health.NewService(ctx, slog.Default())
+	healthServer := newHttpServer(ctx, healthAddr, obs.NewRouter(prometheus.ToTransactionalGatherer(metrics), healthSvc).Handler())
 	go func() { failure <- healthServer.ListenAndServe() }()
 
 	slog.Info("connecting to db")

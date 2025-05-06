@@ -1,4 +1,4 @@
-package health
+package obs
 
 import (
 	"github.com/gin-gonic/gin"

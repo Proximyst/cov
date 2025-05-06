@@ -1,4 +1,4 @@
-package health
+package obs
 
 import (
 	"log/slog"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/proximyst/cov/pkg/health"
 )
 
 //go:generate go tool oapi-codegen -config oapi-codegen.yaml openapi.yaml
@@ -45,8 +46,8 @@ type server struct {
 	health  Health
 }
 
-var _ Health = (*Service)(nil)
-
 type Health interface {
-	Health() HealthResponse
+	Health() map[string]health.Component
+	MarkHealthy(svc, why string)
+	MarkUnhealthy(svc, why string)
 }
