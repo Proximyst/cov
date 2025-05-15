@@ -7,29 +7,27 @@ import (
 	"time"
 
 	"github.com/lmittmann/tint"
+	"github.com/proximyst/cov/pkg/infra/closer"
 )
 
-var ErrLogLevelUnknown = errors.New("unknown log level (must be one of: debug, info, warn, error)")
-
-// SetupLogger initializes the logger with the specified log level and output format.
-// See `CreateLogger` for more details.
-func SetupLogger(logLevel string, writeJSON bool) (*slog.Logger, error) {
-	logger, err := CreateLogger(logLevel, writeJSON)
-	if err != nil {
-		return nil, err
-	}
-	slog.SetDefault(logger)
-	return logger, nil
+type LogFlags struct {
+	Level  string `help:"Set the log level (${enum})" enum:"debug, info, warn, error" default:"info"`
+	Format string `help:"The format to output logs in (${enum})" default:"colour" enum:"plain, colour, ndjson"`
+	File   string `help:"Path to the log file (- being stdout)" default:"-" type:"path"`
 }
 
-// CreateLogger creates a new logger with the specified log level and output format.
-// If `writeJSON` is true, the logger will output JSON formatted logs, otherwise a human-readable format will be used.
-// The log level can be one of "debug", "info", "warn", or "error".
-// If an unknown log level is provided, an error will be returned.
-// The logger will include source information (file and line number) in the output.
-func CreateLogger(logLevel string, writeJSON bool) (*slog.Logger, error) {
+func (f LogFlags) AfterApply(c *closer.C) error {
+	logger, err := f.createLogger(c)
+	if err != nil {
+		return err
+	}
+	slog.SetDefault(logger)
+	return nil
+}
+
+func (f LogFlags) createLogger(c *closer.C) (*slog.Logger, error) {
 	var level slog.Level
-	switch logLevel {
+	switch f.Level {
 	case "debug":
 		level = slog.LevelDebug
 	case "info":
@@ -39,21 +37,40 @@ func CreateLogger(logLevel string, writeJSON bool) (*slog.Logger, error) {
 	case "error":
 		level = slog.LevelError
 	default:
-		return nil, ErrLogLevelUnknown
+		return nil, errors.New("unknown log level") // unreachable due to enum validation
+	}
+
+	writer := os.Stdout
+	if f.File != "-" {
+		file, err := os.OpenFile(f.File, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			return nil, err
+		}
+		c.Add(file.Close)
+
+		writer = file
 	}
 
 	var handler slog.Handler
-	if writeJSON {
-		handler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+	switch f.Format {
+	case "ndjson":
+		handler = slog.NewJSONHandler(writer, &slog.HandlerOptions{
 			Level:     level,
 			AddSource: true,
 		})
-	} else {
-		handler = tint.NewHandler(os.Stdout, &tint.Options{
+	case "plain":
+		handler = slog.NewTextHandler(writer, &slog.HandlerOptions{
+			Level:     level,
+			AddSource: true,
+		})
+	case "colour":
+		handler = tint.NewHandler(writer, &tint.Options{
 			AddSource:  true,
 			Level:      level,
 			TimeFormat: time.RFC3339Nano,
 		})
+	default:
+		return nil, errors.New("unknown log format") // unreachable due to enum validation
 	}
 
 	return slog.New(handler), nil
