@@ -3,16 +3,9 @@ package admin
 import (
 	"github.com/proximyst/cov/cmd/admin/useradd"
 	"github.com/proximyst/cov/cmd/admin/userdel"
-	"github.com/urfave/cli/v3"
 )
 
-func New() *cli.Command {
-	return &cli.Command{
-		Name:  "admin",
-		Usage: "Administration commands that go beyond admin users.",
-		Commands: []*cli.Command{
-			useradd.New(),
-			userdel.New(),
-		},
-	}
+type Command struct {
+	UserAdd useradd.Command `cmd:"useradd" alias:"adduser" help:"Add a new user to the database."`
+	UserDel userdel.Command `cmd:"userdel" alias:"deluser" help:"Delete a user from the database."`
 }

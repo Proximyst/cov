@@ -5,6 +5,7 @@ import (
 
 	"github.com/proximyst/cov/cmd/admin/useradd"
 	"github.com/proximyst/cov/pkg/auth"
+	"github.com/proximyst/cov/pkg/covtest"
 	"github.com/proximyst/cov/pkg/db"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,8 +23,7 @@ func TestUserAdd(t *testing.T) {
 		pool, err := db.CreateTestDB(t)
 		require.NoError(t, err, "failed to create test database")
 
-		cmd := useradd.New()
-		err = cmd.Run(t.Context(), []string{"useradd",
+		err = covtest.Run(t, &useradd.Command{}, []string{
 			"--database", pool.Config().ConnString(),
 			"--username", "testuser"})
 		require.NoError(t, err, "failed to run the useradd command")
@@ -61,8 +61,7 @@ func TestUserAdd(t *testing.T) {
 			pool, err := db.CreateTestDB(t)
 			require.NoError(t, err, "failed to create test database")
 
-			cmd := useradd.New()
-			err = cmd.Run(t.Context(), []string{"useradd",
+			err = covtest.Run(t, &useradd.Command{}, []string{
 				"--database", pool.Config().ConnString(),
 				"--username", "testuser",
 				"--email", "testuser@example.localhost"})
@@ -104,8 +103,7 @@ func TestUserAdd(t *testing.T) {
 			pool, err := db.CreateTestDB(t)
 			require.NoError(t, err, "failed to create test database")
 
-			cmd := useradd.New()
-			err = cmd.Run(t.Context(), []string{"useradd",
+			err = covtest.Run(t, &useradd.Command{}, []string{
 				"--database", pool.Config().ConnString(),
 				"--username", "testuser",
 				"--email", "testuser@example.localhost",
@@ -150,8 +148,7 @@ func TestUserAdd(t *testing.T) {
 		pool, err := db.CreateTestDB(t)
 		require.NoError(t, err, "failed to create test database")
 
-		cmd := useradd.New()
-		err = cmd.Run(t.Context(), []string{"useradd",
+		err = covtest.Run(t, &useradd.Command{}, []string{
 			"--database", pool.Config().ConnString(),
 			"--username", "testuser",
 			"--password", "testpassword"})

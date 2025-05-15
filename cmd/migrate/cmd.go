@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/proximyst/cov/pkg/db"
 )
 
@@ -13,7 +12,13 @@ type Command struct {
 	Database db.Flags `embed:""`
 }
 
-func (c *Command) Run(ctx context.Context, pool *pgxpool.Pool) error {
+func (c *Command) Run(ctx context.Context) error {
+	pool, err := c.Database.Connect(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+	defer pool.Close()
+
 	migrations, err := db.EmbeddedMigrationsSource()
 	if err != nil {
 		return fmt.Errorf("failed to get embedded migrations: %w", err)

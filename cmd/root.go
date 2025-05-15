@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"github.com/alecthomas/kong"
+	"github.com/proximyst/cov/cmd/admin"
 	"github.com/proximyst/cov/cmd/migrate"
+	"github.com/proximyst/cov/cmd/server"
 	"github.com/proximyst/cov/pkg/infra/closer"
 	"github.com/proximyst/cov/pkg/infra/log"
 )
@@ -11,6 +13,8 @@ type CLI struct {
 	Logger log.LogFlags `embed:"" prefix:"log-"`
 
 	Migrate migrate.Command `cmd:"" help:"Run database migrations."`
+	Admin   admin.Command   `cmd:"" help:"Admin commands."`
+	Server  server.Command  `cmd:"" help:"Run the server."`
 }
 
 func (c *CLI) Parse(args []string, closer *closer.C, options ...kong.Option) (*kong.Context, error) {

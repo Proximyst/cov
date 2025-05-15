@@ -2,35 +2,46 @@ package server
 
 import (
 	"context"
+	"fmt"
+	"log/slog"
 
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/proximyst/cov/pkg/api/obs"
+	"github.com/proximyst/cov/pkg/api/rest"
 	"github.com/proximyst/cov/pkg/db"
-	"github.com/urfave/cli/v3"
+	"github.com/proximyst/cov/pkg/health"
 )
 
-func New() *cli.Command {
-	return &cli.Command{
-		Name:  "server",
-		Usage: "Start the server.",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "health-address",
-				Usage: "The address to bind the health check server to.",
-				Value: ":8081",
-			},
-			&cli.StringFlag{
-				Name:  "rest-address",
-				Usage: "The address to bind the REST server to.",
-				Value: ":8080",
-			},
-			db.FlagConnectionString(),
-		},
-		Action: func(ctx context.Context, c *cli.Command) error {
-			// The Gin mode should only be release mode when running from the command. Non-e2e tests should use test mode.
-			// As such, this isn't set in the run function, but here.
-			gin.SetMode(gin.ReleaseMode)
+type Command struct {
+	Database      db.Flags   `embed:""`
+	Observability obs.Flags  `embed:"" prefix:"obs-"`
+	Rest          rest.Flags `embed:"" prefix:"rest-"`
+}
 
-			return run(ctx, c.String("health-address"), c.String("rest-address"), c.String("database"))
-		},
+func (c *Command) Run(ctx context.Context, metrics *prometheus.Registry) error {
+	if gin.IsDebugging() {
+		gin.SetMode(gin.ReleaseMode)
 	}
+
+	metrics.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{Name: "up", Help: "Whether the server is up."}, func() float64 {
+		return 1
+	}))
+
+	failure := make(chan error)
+	healthSvc := health.NewService(ctx, slog.Default())
+	go func() { failure <- obs.Serve(ctx, metrics, healthSvc, c.Observability) }()
+
+	pool, err := c.Database.Connect(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+	defer pool.Close()
+
+	go func() { failure <- rest.Serve(ctx, pool, c.Rest) }()
+
+	slog.Info("server started")
+	err = <-failure
+	slog.Info("server shutting down", "failure-err", err)
+	return nil
 }
