@@ -5,6 +5,7 @@ lint: && generate
     goimports -w .
     go mod tidy
     uvx sqlfluff fix --dialect postgres pkg/db/migrations/ pkg/db/queries.sql
+    golangci-lint run --fast-only --fix
 
 # Generate code.
 generate:
