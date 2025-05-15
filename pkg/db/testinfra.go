@@ -78,14 +78,15 @@ func CreateTestDB(t testingT, opts ...testDatabaseOption) (*pgxpool.Pool, error)
 	if err != nil {
 		return nil, err
 	}
-	defer pool.Close()
 
 	newDBName := generateDBName()
 	_, err = pool.Exec(ctx, fmt.Sprintf("CREATE DATABASE %s", newDBName))
 	if err != nil {
+		pool.Close()
 		return nil, fmt.Errorf("failed to create test database: %w", err)
 	}
 	pool.Close()
+	t.Logf("created test database %s\n", newDBName)
 
 	// Now we can connect to the new database.
 	connString := getTestDatabaseDSN(newDBName)
