@@ -3,7 +3,7 @@ module github.com/proximyst/cov
 go 1.24.2
 
 require (
-	github.com/alecthomas/kong v1.10.0
+	github.com/alecthomas/kong v1.11.0
 	github.com/casbin/casbin/v2 v2.105.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/goccy/go-yaml v1.17.1
@@ -14,7 +14,7 @@ require (
 	github.com/matthewhartstonge/argon2 v1.3.1
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/prometheus/client_golang v1.22.0
-	github.com/prometheus/common v0.63.0
+	github.com/prometheus/common v0.64.0
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v3 v3.3.3
 )
