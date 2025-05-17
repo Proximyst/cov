@@ -5,7 +5,6 @@ import (
 	"github.com/proximyst/cov/cmd/admin"
 	"github.com/proximyst/cov/cmd/migrate"
 	"github.com/proximyst/cov/cmd/server"
-	"github.com/proximyst/cov/pkg/infra/closer"
 	"github.com/proximyst/cov/pkg/infra/log"
 )
 
@@ -17,10 +16,9 @@ type CLI struct {
 	Server  server.Command  `cmd:"" help:"Run the server."`
 }
 
-func (c *CLI) Parse(args []string, closer *closer.C, options ...kong.Option) (*kong.Context, error) {
+func (c *CLI) Parse(args []string, options ...kong.Option) (*kong.Context, error) {
 	options = append(options, kong.Name("cov"),
-		kong.Description("cov is a code coverage service."),
-		kong.Bind(closer))
+		kong.Description("cov is a code coverage service."))
 
 	parser, err := kong.New(c, options...)
 	if err != nil {

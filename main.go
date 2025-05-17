@@ -8,7 +8,6 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/proximyst/cov/cmd"
 	"github.com/proximyst/cov/pkg/infra/binds"
-	"github.com/proximyst/cov/pkg/infra/closer"
 )
 
 func main() {
@@ -18,13 +17,6 @@ func main() {
 func run() int {
 	ctx := context.Background()
 
-	closer := closer.New()
-	defer func() {
-		if err := closer.Close(); err != nil {
-			slog.Error("failed to clean up after app", "error", err)
-		}
-	}()
-
 	// Strip out the program name from args.
 	args := os.Args[1:]
 
@@ -32,7 +24,7 @@ func run() int {
 	options = append(options, binds.Metrics(nil)...)
 
 	cli := &cmd.CLI{}
-	c, err := cli.Parse(args, closer, options...)
+	c, err := cli.Parse(args, options...)
 	if err != nil {
 		slog.Error("failed to parse command", "error", err)
 		return 1

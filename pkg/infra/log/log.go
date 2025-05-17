@@ -7,17 +7,15 @@ import (
 	"time"
 
 	"github.com/lmittmann/tint"
-	"github.com/proximyst/cov/pkg/infra/closer"
 )
 
 type LogFlags struct {
 	Level  string `help:"Set the log level (${enum})" enum:"debug, info, warn, error" default:"info"`
 	Format string `help:"The format to output logs in (${enum})" default:"colour" enum:"plain, colour, ndjson"`
-	File   string `help:"Path to the log file (- being stdout)" default:"-" type:"path"`
 }
 
-func (f LogFlags) AfterApply(c *closer.C) error {
-	logger, err := f.createLogger(c)
+func (f LogFlags) AfterApply() error {
+	logger, err := f.createLogger()
 	if err != nil {
 		return err
 	}
@@ -25,7 +23,7 @@ func (f LogFlags) AfterApply(c *closer.C) error {
 	return nil
 }
 
-func (f LogFlags) createLogger(c *closer.C) (*slog.Logger, error) {
+func (f LogFlags) createLogger() (*slog.Logger, error) {
 	var level slog.Level
 	switch f.Level {
 	case "debug":
@@ -41,15 +39,6 @@ func (f LogFlags) createLogger(c *closer.C) (*slog.Logger, error) {
 	}
 
 	writer := os.Stdout
-	if f.File != "-" {
-		file, err := os.OpenFile(f.File, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			return nil, err
-		}
-		c.Add(file.Close)
-
-		writer = file
-	}
 
 	var handler slog.Handler
 	switch f.Format {
