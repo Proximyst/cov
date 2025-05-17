@@ -6,13 +6,11 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/proximyst/cov/pkg/infra/binds"
-	"github.com/proximyst/cov/pkg/infra/closer"
 )
 
 type runOptions struct {
 	options []kong.Option
 	metrics *prometheus.Registry
-	closer  *closer.C
 }
 
 type option func(o *runOptions)
@@ -41,10 +39,7 @@ func Run(tb TestingTB, cmd any, args []string, opts ...option) error {
 	for _, opt := range opts {
 		opt(&o)
 	}
-	if o.closer == nil {
-		o.closer = closer.ForTesting(tb)
-	}
-	o.options = append(o.options, kong.Bind(o.closer),
+	o.options = append(o.options,
 		binds.Context(tb.Context()),
 		kong.BindTo(tb, (*TestingTB)(nil)))
 	o.options = append(o.options, binds.Metrics(o.metrics)...)
