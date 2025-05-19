@@ -9,7 +9,7 @@ require (
 	github.com/goccy/go-yaml v1.17.1
 	github.com/golang-migrate/migrate/v4 v4.18.3
 	github.com/google/uuid v1.6.0
-	github.com/jackc/pgx/v5 v5.7.4
+	github.com/jackc/pgx/v5 v5.7.5
 	github.com/lmittmann/tint v1.0.7
 	github.com/matthewhartstonge/argon2 v1.3.1
 	github.com/oapi-codegen/runtime v1.1.1
