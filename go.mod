@@ -6,11 +6,11 @@ require (
 	github.com/alecthomas/kong v1.11.0
 	github.com/casbin/casbin/v2 v2.105.0
 	github.com/gin-gonic/gin v1.10.1
-	github.com/goccy/go-yaml v1.17.1
+	github.com/goccy/go-yaml v1.18.0
 	github.com/golang-migrate/migrate/v4 v4.18.3
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.5
-	github.com/lmittmann/tint v1.1.0
+	github.com/lmittmann/tint v1.1.1
 	github.com/matthewhartstonge/argon2 v1.3.1
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/prometheus/client_golang v1.22.0
