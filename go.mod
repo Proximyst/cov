@@ -13,8 +13,8 @@ require (
 	github.com/lmittmann/tint v1.1.2
 	github.com/matthewhartstonge/argon2 v1.3.4
 	github.com/oapi-codegen/runtime v1.1.2
-	github.com/prometheus/client_golang v1.23.1
-	github.com/prometheus/common v0.66.0
+	github.com/prometheus/client_golang v1.23.2
+	github.com/prometheus/common v0.66.1
 	github.com/stretchr/testify v1.11.1
 	github.com/urfave/cli/v3 v3.4.1
 )
@@ -47,7 +47,6 @@ require (
 	github.com/go-sql-driver/mysql v1.9.2 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/google/cel-go v0.24.1 // indirect
-	github.com/grafana/regexp v0.0.0-20240518133315-a468a5bfb3bc // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
@@ -96,6 +95,7 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
+	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	golang.org/x/arch v0.17.0 // indirect
 	golang.org/x/crypto v0.41.0 // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
