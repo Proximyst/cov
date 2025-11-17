@@ -4,7 +4,7 @@ go 1.24.2
 
 require (
 	github.com/alecthomas/kong v1.13.0
-	github.com/casbin/casbin/v2 v2.132.0
+	github.com/casbin/casbin/v2 v2.134.0
 	github.com/gin-gonic/gin v1.11.0
 	github.com/goccy/go-yaml v1.18.0
 	github.com/golang-migrate/migrate/v4 v4.19.0
@@ -16,7 +16,7 @@ require (
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/common v0.67.2
 	github.com/stretchr/testify v1.11.1
-	github.com/urfave/cli/v3 v3.6.0
+	github.com/urfave/cli/v3 v3.6.1
 )
 
 require (
