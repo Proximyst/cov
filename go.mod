@@ -4,7 +4,7 @@ go 1.24.2
 
 require (
 	github.com/alecthomas/kong v1.13.0
-	github.com/casbin/casbin/v2 v2.134.0
+	github.com/casbin/casbin/v2 v2.135.0
 	github.com/gin-gonic/gin v1.11.0
 	github.com/goccy/go-yaml v1.19.0
 	github.com/golang-migrate/migrate/v4 v4.19.1
