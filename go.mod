@@ -6,7 +6,7 @@ require (
 	github.com/alecthomas/kong v1.13.0
 	github.com/casbin/casbin/v2 v2.135.0
 	github.com/gin-gonic/gin v1.11.0
-	github.com/goccy/go-yaml v1.19.1
+	github.com/goccy/go-yaml v1.19.2
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.8.0
