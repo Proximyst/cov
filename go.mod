@@ -10,7 +10,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.8.0
-	github.com/lmittmann/tint v1.1.2
+	github.com/lmittmann/tint v1.1.3
 	github.com/matthewhartstonge/argon2 v1.4.5
 	github.com/oapi-codegen/runtime v1.1.2
 	github.com/prometheus/client_golang v1.23.2
