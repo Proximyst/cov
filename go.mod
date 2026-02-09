@@ -3,7 +3,7 @@ module github.com/proximyst/cov
 go 1.24.2
 
 require (
-	github.com/alecthomas/kong v1.13.0
+	github.com/alecthomas/kong v1.14.0
 	github.com/casbin/casbin/v2 v2.135.0
 	github.com/gin-gonic/gin v1.11.0
 	github.com/goccy/go-yaml v1.19.2
